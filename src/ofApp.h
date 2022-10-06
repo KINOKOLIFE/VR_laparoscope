@@ -4,6 +4,7 @@
 #include "ofxImGui.h"
 #include "ultrasound_viewer.h"
 #include "sheared_stracture.h"
+#include "uvc_capture.h"
 
 class ofApp : public ofBaseApp{
 
@@ -11,6 +12,7 @@ class ofApp : public ofBaseApp{
 		void setup();
 		void update();
 		void draw();
+        void exit();
 
 		void keyPressed(int key);
 		void keyReleased(int key);
@@ -27,4 +29,8 @@ class ofApp : public ofBaseApp{
     //ultrasound_gause
     ofFbo fbo;
     ofxImGui::Gui gui;
+    //----uvc camera
+    std::vector<string> uvc_list;
+    ofImage UVCimage;
+    capture_thread uvc_cap;
 };

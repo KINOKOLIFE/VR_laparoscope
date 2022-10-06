@@ -5,17 +5,26 @@ void ofApp::setup(){
     viewer.fbo_allocate(fbo);
     //------imGUI セットアップ
     gui.setup();
+    //--video capture
+    uvc_cap.get_camera_list(uvc_list);
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
+    ofDisableDepthTest();
     viewer.update(fbo);
     viewer.hover = false;
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+    ofDisableDepthTest();
+    if(uvc_cap.setup){
+        UVCimage.setFromPixels(uvc_cap.pixels);
+        UVCimage.draw(110 ,50 ,320,240);
+    }
     fbo.draw(viewer.px,  viewer.py, viewer.width, viewer.height);
+    ofEnableDepthTest();
     gui.begin();{
         ImGui::Begin("ultrasound");{
             if(ImGui::IsWindowHovered()){
@@ -42,11 +51,10 @@ void ofApp::draw(){
             }
 
         }ImGui::End();
-        /*
         ImGui::Begin("UVC source");{
             if(ImGui::IsWindowHovered()){
-                gui_hover = true;// GUI上にマウスがあるときにcropウインドウの操作をキャンセルさせるため
-                easycam.disableMouseInput();
+                viewer.hover = true; // GUI上にマウスがあるときにcropウインドウの操作をキャンセルさせるため
+                //easycam.disableMouseInput();
             }else{
                 
             }
@@ -64,8 +72,11 @@ void ofApp::draw(){
             }
             ImGui::Text("Hello");
         }ImGui::End();
-         */
     }gui.end();
+}
+//--------------------------------------------------------------
+void ofApp::exit(){
+    uvc_cap.stopThread();
 }
 
 //--------------------------------------------------------------

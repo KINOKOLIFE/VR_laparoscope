@@ -109,6 +109,7 @@
 		E135C7F22D40FCFD9C5AB94B /* imgui.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = imgui.h; path = ../../../addons/ofxImGui/libs/imgui/src/imgui.h; sourceTree = SOURCE_ROOT; };
 		E2CF093F28EEEB050041FE7D /* ultrasound_viewer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ultrasound_viewer.h; sourceTree = "<group>"; };
 		E2CF094028EEEB390041FE7D /* sheared_stracture.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sheared_stracture.h; sourceTree = "<group>"; };
+		E2CF094128EEF6EB0041FE7D /* uvc_capture.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = uvc_capture.h; sourceTree = "<group>"; };
 		E42962AC2163EDD300A6A9E2 /* ofCamera.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ofCamera.cpp; path = ../../../libs/openFrameworks/3d/ofCamera.cpp; sourceTree = SOURCE_ROOT; };
 		E42962AD2163EDD300A6A9E2 /* ofMesh.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ofMesh.h; path = ../../../libs/openFrameworks/3d/ofMesh.h; sourceTree = SOURCE_ROOT; };
 		E42962AE2163EDD300A6A9E2 /* ofNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ofNode.h; path = ../../../libs/openFrameworks/3d/ofNode.h; sourceTree = SOURCE_ROOT; };
@@ -813,6 +814,7 @@
 				E4B69E1F0A3A1BDC003C02F2 /* ofApp.h */,
 				E2CF093F28EEEB050041FE7D /* ultrasound_viewer.h */,
 				E2CF094028EEEB390041FE7D /* sheared_stracture.h */,
+				E2CF094128EEF6EB0041FE7D /* uvc_capture.h */,
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;
