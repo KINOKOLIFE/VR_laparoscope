@@ -7,12 +7,17 @@ void ofApp::setup(){
     gui.setup();
     //--video capture
     uvc_cap.get_camera_list(uvc_list);
+    //3d perspective
+    perspective.allocate(848, 400);
+    easycam.setControlArea(area2);
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
     ofDisableDepthTest();
     viewer.update(fbo);
+    easycam.enableMouseInput();
+    drawTerrios(perspective, easycam);
     viewer.hover = false;
 }
 
@@ -25,11 +30,12 @@ void ofApp::draw(){
     }
     fbo.draw(viewer.px,  viewer.py, viewer.width, viewer.height);
     ofEnableDepthTest();
+    perspective.draw(area2);
     gui.begin();{
         ImGui::Begin("ultrasound");{
             if(ImGui::IsWindowHovered()){
                 viewer.hover = true;
-                //easycam.disableMouseInput();
+                easycam.disableMouseInput();
             }
             //ImGui::Checkbox("flip", &isEnable);//https://qiita.com/Ushio/items/446d78c881334919e156
             static char buf[256] = "";//http://www.sanko-shoko.net/note.php?id=qlv3
@@ -54,7 +60,7 @@ void ofApp::draw(){
         ImGui::Begin("UVC source");{
             if(ImGui::IsWindowHovered()){
                 viewer.hover = true; // GUI上にマウスがあるときにcropウインドウの操作をキャンセルさせるため
-                //easycam.disableMouseInput();
+                easycam.disableMouseInput();
             }else{
                 
             }

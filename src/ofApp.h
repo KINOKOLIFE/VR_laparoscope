@@ -1,10 +1,18 @@
 #pragma once
 
 #include "ofMain.h"
+#include "ofxAssimpModelLoader.h"
+
+#include <Eigen/Dense>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <Eigen/LU>
+
 #include "ofxImGui.h"
 #include "ultrasound_viewer.h"
 #include "sheared_stracture.h"
 #include "uvc_capture.h"
+#include "graphics.h"
 
 class ofApp : public ofBaseApp{
 
@@ -33,4 +41,8 @@ class ofApp : public ofBaseApp{
     std::vector<string> uvc_list;
     ofImage UVCimage;
     capture_thread uvc_cap;
+    //---3d pespective
+    ofFbo perspective;
+    ofEasyCam easycam;
+    ofRectangle area2 = ofRectangle(0,400,848,400);
 };
