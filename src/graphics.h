@@ -34,7 +34,7 @@ static Eigen::Matrix4d rotz(double degree)
 }
 
 //--------------------
-/*open cvが入るまでは使用しない
+
 
 static Eigen::Matrix4d VecsToMat(cv::Vec3d rvec, cv::Vec3d tvec)
 {
@@ -91,7 +91,7 @@ static void MatToVecs(cv::Vec3d &rvec, cv::Vec3d &tvec, Eigen::Matrix4d H)
     rvec = temp1;
     tvec = temp2;
 }
- opencvが入るまでは使用しない*/
+
 
 static glm::mat4x4 eigen_glm(Eigen::Matrix4d &mat){
     ofMatrix4x4 dest;
@@ -171,12 +171,19 @@ static void draw_model(ofFbo &fbo, ofEasyCam &cam, ofxAssimpModelLoader &model, 
             ofPushMatrix();{
                 ofMultMatrix(eigen_glm(mat));
                 ofPushStyle();{
+                    ofLight light;
+                    //light.setSpotlight();
+                    light.setPosition(0, 0, 100);
+                    //light.setDiffuseColor(ofFloatColor(0.0, 0.0, 1.0));
                     ofEnableAlphaBlending();
                     ofEnableBlendMode(OF_BLENDMODE_ALPHA);
                     ofEnableDepthTest();
-                    ofSetColor(color);
+                    //ofSetColor(color);
+                    light.enable();
                     model.drawFaces();
+                    //model.drawWireframe();
                     ofDrawAxis(100);
+                    light.disable();
                 }ofPopStyle();
             }ofPopMatrix();
         }cam.end();
@@ -293,7 +300,7 @@ static void draw_board(Eigen::Matrix4d &mat, int gridnum, float marker_length, o
 }
 
 //---local
-/*opencvが入りまで未使用
+
 static void draw_marker_center(ofFbo &fbo, ofEasyCam &cam, std::vector<cv::Vec3d> &points, ofColor c, float rad, bool fiiiinsde){
     fbo.begin();{
         cam.begin();{
@@ -311,4 +318,4 @@ static void draw_marker_center(ofFbo &fbo, ofEasyCam &cam, std::vector<cv::Vec3d
         }cam.end();
     }fbo.end();
 }
-*/
+
