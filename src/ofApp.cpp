@@ -18,6 +18,16 @@ void ofApp::setup(){
     realsense_model.loadModel("realsense_model/t265.obj",true);
     realsense_model.setScaleNormalization(false);
     //ofEnableSmoothing();
+    ofDisableArbTex();
+    //---human interface device
+    HID = new hid();
+    ofAddListener(HID->dragging_button1, this, &ofApp::button_1_drag);
+    ofAddListener(HID->up_button1, this, &ofApp::button_1_up);
+    ofAddListener(HID->up_button2, this, &ofApp::button_2_up);
+    ofAddListener(HID->up_button3, this, &ofApp::button_3_up);
+    if(HID->setup()){
+        HID->startThread();
+    }
 }
 
 //--------------------------------------------------------------
@@ -46,12 +56,29 @@ void ofApp::draw(){
     gui_draw();
 }
 //--------------------------------------------------------------
+void ofApp::button_1_drag(bool &b){
+    std::cout<<"drag button1 call back"<<std::endl;
+}
+//--------------------------------------------------------------
+void ofApp::button_1_up(bool &b){
+    std::cout<<"up button1 call back"<<std::endl;
+}
+//--------------------------------------------------------------
+void ofApp::button_2_up(bool &b){
+    std::cout<<"up button2 call back"<<std::endl;
+}
+//--------------------------------------------------------------
+void ofApp::button_3_up(bool &b){
+    std::cout<<"up button3 call back"<<std::endl;
+}
+//--------------------------------------------------------------
 void ofApp::exit(){
     uvc_cap.stopThread();
     if(rs){
         rs->stopThread();
     }
     delete rs;
+    
 }
 //--------------------------------------------------------------
 void ofApp::gui_draw(){
@@ -96,10 +123,10 @@ void ofApp::gui_draw(){
             static int listbox_item_current = 0;
             if(ImGui::ListBox("", &listbox_item_current, listbox_items, IM_ARRAYSIZE(listbox_items), 3)){
                 string s = listbox_items[listbox_item_current];
-                if( s == "H264 USB Camera"){
+                std::cout<<s<<std::endl;
+                if( std::equal(s.begin() , s.begin() + 7, "H264 USB") ){
                     uvc_cap.set_param(listbox_item_current,1280,720);
                 }
-                
                 if(!uvc_cap.isThreadRunning()){
                     uvc_cap.startThread();
                 }

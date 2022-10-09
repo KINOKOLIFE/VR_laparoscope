@@ -17,6 +17,7 @@
 #include "uvc_capture.h"
 #include "graphics.h"
 #include "realsense.h"
+#include "hid.h"
 
 class ofApp : public ofBaseApp{
 
@@ -61,5 +62,10 @@ class ofApp : public ofBaseApp{
     ofShader phong_shader;
     ofFbo gfbo;
     void gbuffer_setup();
-    
+    //---hidapi
+    void button_1_drag(bool &b);
+    void button_1_up(bool &b);
+    void button_2_up(bool &b);
+    void button_3_up(bool &b);
+    hid *HID;
 };
