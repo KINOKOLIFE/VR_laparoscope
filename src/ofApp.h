@@ -50,7 +50,7 @@ class ofApp : public ofBaseApp{
     //---3d pespective
     ofFbo perspective;
     ofEasyCam easycam;
-    ofRectangle area2 = ofRectangle(0,400,848,400);
+    ofRectangle area2 = ofRectangle(0,400,424,400);
     //realsense
     rs265 *rs;
     
@@ -68,4 +68,6 @@ class ofApp : public ofBaseApp{
     void button_2_up(bool &b);
     void button_3_up(bool &b);
     hid *HID;
+    //------endoscope
+    float fov = 60.0f;
 };

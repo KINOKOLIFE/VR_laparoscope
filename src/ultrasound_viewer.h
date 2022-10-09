@@ -11,6 +11,7 @@ class object_{
     float radius;
     bool focus;
     bool onDrag;
+    bool updated;
     float start_px, start_py;
     float strat_mouse_x, start_mouse_y;
     int type;
@@ -89,7 +90,10 @@ class object_{
         return check;
     }
     virtual void draw(ofFbo &fbo){
-        
+        fbo.begin();
+            ofSetColor(ofColor::fromHsb(hue, 255, 255));
+            ofDrawCircle(px, py, radius);
+        fbo.end();
     }
     void set_param(float _x, float _y, int _hue, float _radius){
         px = _x; py = _y; hue = _hue; radius = _radius;
@@ -147,8 +151,8 @@ public:
     bool hover;
     float px, py;
     float width, height;
-    float image_width, image_height; //もしかしたら不要かもしれない
-    std::vector<object_> objects;
+    //float image_width, image_height; //もしかしたら不要かもしれない
+    std::vector<object_> rectangle_;
     std::vector<std::shared_ptr<object_> > gause;
     Viewer(float _x, float _y, float _w, float _h):px(_x), py(_y), width(_w), height(_h){
         //https://qiita.com/MusicScience37/items/1ba81db1592c974f0632
@@ -161,7 +165,10 @@ public:
         gause[0]->set_param(width - 20, 20, 40,  6);
         gause[1]->set_param(width - 20, 60, 40,  6);
         gause[2]->set_param(width / 2.0,10, 100, 6);
-        
+        rectangle_.push_back(object_(10,10,                  60,6));
+        rectangle_.push_back(object_(width - 20, 10,         60,6));
+        rectangle_.push_back(object_(width - 20,height - 10, 60,6));
+        rectangle_.push_back(object_(10,height - 10,         60,6));
     }
     Viewer(){
     }
@@ -184,12 +191,22 @@ public:
         for(int i = 0; i < 3; i++){
             gause[i]->draw(fbo);
         }
+
+        for(auto &a :rectangle_){
+            a.draw(fbo);
+            a.updated = false;
+        }
     }
+    /*
     void draw(ofFbo &fbo){
         for(int i = 0; i < 3; i++){
             gause[i]->draw(fbo);
         }
+        for(auto a :rectangle_){
+            a.draw(fbo);
+        }
     }
+     */
     void mouse(int x, int y, int button, int function){
         if(inner( x, y )){
             switch (function) {
@@ -198,12 +215,20 @@ public:
                         gause[i]->focus = false;
                         gause[i]->mouse_move(get_viwer_position(x,y));
                     }
+                    for(auto &a :rectangle_){
+                        a.focus = false;
+                        a.mouse_move(get_viwer_position(x,y));
+                    }
                     break;
                 case 2://mouse_press
                     if(button == 0){
                         for(int i = 0; i < 3; i++){
                             gause[i]->selected = false;
                             gause[i]->mouse_press(get_viwer_position(x,y));
+                        }
+                        for(auto &a :rectangle_){
+                            a.selected = false;
+                            a.mouse_press(get_viwer_position(x,y));
                         }
                     }
                     break;
@@ -214,12 +239,18 @@ public:
                         for(int i = 0; i < 3; i++){
                            gause[i]->mouse_release();
                         }
+                        for(auto &a :rectangle_){
+                            a.mouse_release();
+                        }
                     }
                     break;
                 case 1://mouse_drag
                     if(button == 0){
                         for(int i = 0; i < 3; i++){
                             gause[i]->mouse_drag(get_viwer_position(x,y));
+                        }
+                        for(auto &a :rectangle_){
+                            a.mouse_drag(get_viwer_position(x,y));
                         }
                     }
                     break;
@@ -233,6 +264,7 @@ private:
     bool inner(float x, float y){
         return  ( px < x && x < ( px + width ) && py < y && y < ( py + height ));
     }
+    /*
     glm::vec2 get_position(float x, float y){
         float X = x / image_width * width + px;
         float Y = y / image_height * height + py;
@@ -243,6 +275,7 @@ private:
         float y = ( Y - py ) * image_height / height ;
         return glm::vec2(x, y);
     }
+     */
     glm::vec2 get_viwer_position(float x, float y){
         float X = x - px;
         float Y = y - py;

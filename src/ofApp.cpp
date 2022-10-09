@@ -2,6 +2,9 @@
 Viewer viewer(0 ,0 ,480, 270);
 ofImage fisheye_left_image;
 ofxAssimpModelLoader realsense_model;
+std::vector<ofFbo> fboes;
+ofMesh realsense_mesh;
+ofMesh drawing_plane;
 //--------------------------------------------------------------
 void ofApp::setup(){
     viewer.fbo_allocate(fbo);
@@ -10,13 +13,15 @@ void ofApp::setup(){
     //--video capture
     uvc_cap.get_camera_list(uvc_list);
     //3d perspective
-    perspective.allocate(848, 400);
+    perspective.allocate(424, 400);
     easycam.setControlArea(area2);
     //--
     fisheye_left_image.allocate(848, 800, OF_IMAGE_GRAYSCALE);
     //--
     realsense_model.loadModel("realsense_model/t265.obj",true);
     realsense_model.setScaleNormalization(false);
+    realsense_mesh = realsense_model.getMesh(0);;
+    setNormals(realsense_mesh);
     //ofEnableSmoothing();
     ofDisableArbTex();
     //---human interface device
@@ -28,6 +33,16 @@ void ofApp::setup(){
     if(HID->setup()){
         HID->startThread();
     }
+    //--gbuffer
+    gbuffer_setup();
+    drawing_plane = rectMesh(0,0,100,100,true);
+    setNormals(drawing_plane);
+    //--endoscope
+    //float camHeight = 540;
+    //float camera_matirx_height = 427;
+    //fov = 2.0 * atan( camHeight / 2.0 / camera_matirx_height ) / M_PI * 180;
+    // screen height /2.0   :   fy    -> most important code
+    //cam.setFov(fov);
 }
 
 //--------------------------------------------------------------
@@ -40,6 +55,63 @@ void ofApp::update(){
         draw_model(perspective, easycam, realsense_model, rs->t265_rawoutput, ofColor(200));
         fisheye_left_image.setFromPixels(rs->fisheye_left_cvimage.ptr(), 848, 800, OF_IMAGE_GRAYSCALE);
     }
+
+    gfbo.begin();{
+        ofClear(0);
+        glEnable(GL_DEPTH_TEST);
+        //1. render geometry to G-Buffer-------------------------------
+        ofMatrix4x4 viewMatrix;
+        g_buffer.begin();{
+            g_buffer.activateAllDrawBuffers();
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            easycam.begin();{
+                projection_matrix = easycam.getProjectionMatrix();
+                viewMatrix = ofGetCurrentViewMatrix();
+                geo_shader.begin();{
+                    geo_shader.setUniformMatrix4f("view", viewMatrix);
+                    geo_shader.setUniformMatrix4f("projection", projection_matrix);
+                    geo_shader.setUniform1i("u_isLight", 0);
+          
+                    int deg = 0;
+                    for(auto &f:fboes){
+                        ofPushMatrix();{
+                            ofRotateXDeg(deg);
+                            deg += 30;
+                            ofTranslate(0,-0.5,0);
+                            geo_shader.setUniformTexture("image", f.getTexture(), 0);
+                            drawing_plane.draw();
+                        }ofPopMatrix();
+                    }
+                    geo_shader.setUniform1i("u_isLight", 1);
+                    geo_shader.setUniform4f("color" , glm::vec4(0.5 ,0.5 ,0.5 ,1.0));
+                    realsense_mesh.draw();
+                    geo_shader.setUniform4f("color" , glm::vec4(0.4 ,0.4 ,0.4 ,0.6));
+                    //ofDrawGrid(10,10,false,true,false,false);
+                    ofDrawGrid(10,10,false,false,false,true);
+                    ofPushMatrix();
+                    ofTranslate(0.1,0.1,0.1);
+                    geo_shader.setUniform4f("color" , glm::vec4(1.0 ,0.0 ,0.0 ,1.0));
+                    ofDrawLine(0,0,0,100,0,0);
+                    geo_shader.setUniform4f("color" , glm::vec4(0.0 ,1.0 ,0.0 ,1.0));
+                    ofDrawLine(0,0,0,0,100,0);
+                    geo_shader.setUniform4f("color" , glm::vec4(0.0 ,0.0 ,1.0 ,1.0));
+                    ofDrawLine(0,0,0,0,0,100);
+                    ofPopMatrix();
+                }geo_shader.end();
+            }easycam.end();
+        }g_buffer.end();
+        // 3. lighting Pass--------------------------------------------
+        glDisable(GL_DEPTH_TEST);
+        phong_shader.begin();{
+            phong_shader.setUniformTexture("gPosition", g_buffer.getTexture(0), 0);
+            phong_shader.setUniformTexture("gNormal", g_buffer.getTexture(1), 1);
+            phong_shader.setUniformTexture("gAlbedo", g_buffer.getTexture(2), 2);
+            phong_shader.setUniform3f("u_lightPos", ofVec3f(1.0, 1.0, 3.0) * viewMatrix);
+            phong_shader.setUniform3f("viewPos", easycam.getPosition());
+            quad.draw();
+        }phong_shader.end();
+    }gfbo.end();
 }
 
 //--------------------------------------------------------------
@@ -53,6 +125,7 @@ void ofApp::draw(){
     }
     fbo.draw(viewer.px,  viewer.py, viewer.width, viewer.height);
     perspective.draw(area2);
+    gfbo.draw(480,400);
     gui_draw();
 }
 //--------------------------------------------------------------
@@ -160,6 +233,18 @@ void ofApp::gui_draw(){
                 }
             }
         }ImGui::End();
+    
+        ImGui::Begin("endoscope");{
+            if(ImGui::IsWindowHovered()){
+                viewer.hover = true; // GUI上にマウスがあるときにcropウインドウの操作をキャンセルさせるため
+                easycam.disableMouseInput();
+            }
+            if (ImGui::Button("on")) {
+                
+            }
+            ImGui::SliderFloat("Float", &fov, 40.0f, 120.0f);
+            
+        }ImGui::End();
     }gui.end();
 }
 
@@ -223,7 +308,22 @@ void ofApp::gbuffer_setup(){
     geo_shader.load("shader/geo_shader");
     phong_shader.load("shader/phong_shader");
     gfbo.allocate(480, 270);
-    //-------------
+    //-------------透過画像を準備
+    ofDisableArbTex();
+    for(int i = 0; i < 10; i++){
+        ofFbo f;
+        f.allocate(256,256);
+        f.begin();
+        ofClear(0,0);
+        for(int k = 0; k < 10; k++)
+        {
+            ofSetColor(ofRandom(0,255),ofRandom(0,255),ofRandom(0,255),ofRandom(200,255));
+            ofDrawCircle(ofRandom(0,255), ofRandom(0,255), 10);
+        }
+        f.end();
+        fboes.push_back(f);
+    }
+    //-----------------------
     ofDisableArbTex();
     vector<GLint> formats = { GL_RGBA16F, GL_RGBA16F, GL_RGBA16F };
     ofFbo::Settings settings;
@@ -253,3 +353,5 @@ void ofApp::gbuffer_setup(){
     quad.addVertex(ofVec3f(-1.0, 1.0, 0.0)); //top-left
     quad.addTexCoord(ofVec2f(0.0f, 0.0f));
 }
+//-----------------------
+
