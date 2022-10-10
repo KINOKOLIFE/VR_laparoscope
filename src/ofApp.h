@@ -18,6 +18,8 @@
 #include "graphics.h"
 #include "realsense.h"
 #include "hid.h"
+//#include "testthread.h"
+#include "aruco_manager.h"
 
 class ofApp : public ofBaseApp{
 
@@ -70,4 +72,7 @@ class ofApp : public ofBaseApp{
     hid *HID;
     //------endoscope
     float fov = 60.0f;
+    //testthread *tst;
+    //------aruco
+    aruco_manager aruco_manager_();
 };

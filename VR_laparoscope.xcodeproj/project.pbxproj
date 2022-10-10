@@ -118,6 +118,8 @@
 		E135C7F22D40FCFD9C5AB94B /* imgui.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = imgui.h; path = ../../../addons/ofxImGui/libs/imgui/src/imgui.h; sourceTree = SOURCE_ROOT; };
 		E2BF109B28F25ADF0006E851 /* libhidapi.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libhidapi.dylib; path = ../../../../../../../usr/local/lib/libhidapi.dylib; sourceTree = "<group>"; };
 		E2BF109D28F25B270006E851 /* hid.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hid.h; sourceTree = "<group>"; };
+		E2BF109F28F2D13E0006E851 /* testthread.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = testthread.h; sourceTree = "<group>"; };
+		E2BF10A028F30DF70006E851 /* aruco_manager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = aruco_manager.h; sourceTree = "<group>"; };
 		E2CF093F28EEEB050041FE7D /* ultrasound_viewer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ultrasound_viewer.h; sourceTree = "<group>"; };
 		E2CF094028EEEB390041FE7D /* sheared_stracture.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sheared_stracture.h; sourceTree = "<group>"; };
 		E2CF094128EEF6EB0041FE7D /* uvc_capture.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = uvc_capture.h; sourceTree = "<group>"; };
@@ -866,6 +868,8 @@
 				E2FE08B628F024B600B29ADE /* EQKF.cpp */,
 				E2FE08B728F024B600B29ADE /* EQKF.hpp */,
 				E2BF109D28F25B270006E851 /* hid.h */,
+				E2BF109F28F2D13E0006E851 /* testthread.h */,
+				E2BF10A028F30DF70006E851 /* aruco_manager.h */,
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;
@@ -1056,6 +1060,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = E4EB6923138AFD0F00A09F29 /* Project.xcconfig */;
 			buildSettings = {
+				"CLANG_CXX_LANGUAGE_STANDARD[arch=x86_64]" = "gnu++14";
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -1219,6 +1224,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = E4EB6923138AFD0F00A09F29 /* Project.xcconfig */;
 			buildSettings = {
+				"CLANG_CXX_LANGUAGE_STANDARD[arch=x86_64]" = "gnu++14";
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -1281,6 +1287,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = E4EB6923138AFD0F00A09F29 /* Project.xcconfig */;
 			buildSettings = {
+				"CLANG_CXX_LANGUAGE_STANDARD[arch=x86_64]" = "gnu++14";
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";

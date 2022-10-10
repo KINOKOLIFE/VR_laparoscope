@@ -43,6 +43,12 @@ void ofApp::setup(){
     //fov = 2.0 * atan( camHeight / 2.0 / camera_matirx_height ) / M_PI * 180;
     // screen height /2.0   :   fy    -> most important code
     //cam.setFov(fov);
+/*
+    tst = new testthread();
+    tst->setup();
+    tst->connect();
+    tst->startThread();
+  */
 }
 
 //--------------------------------------------------------------
@@ -51,11 +57,32 @@ void ofApp::update(){
     viewer.hover = false;
     easycam.enableMouseInput();
     drawTerrios(perspective, easycam);
+    
+    ofMesh m;
+    m = rectMesh(0,0,100,100,true);
+    setNormals(m);
+    perspective.begin();
+    easycam.begin();
+    m.draw();
+    easycam.end();
+    perspective.end();
     if(rs){
         draw_model(perspective, easycam, realsense_model, rs->t265_rawoutput, ofColor(200));
-        fisheye_left_image.setFromPixels(rs->fisheye_left_cvimage.ptr(), 848, 800, OF_IMAGE_GRAYSCALE);
+        //fisheye_left_image.setFromPixels(rs->fisheye_left_cvimage.ptr(), 848, 800, OF_IMAGE_GRAYSCALE);
+        fisheye_left_image.setFromPixels(rs->colorimg.ptr(), 848, 800, OF_IMAGE_COLOR);
+        if(rs->tvecs_.size()>0){
+            //std::cout<<tst->tvecs_[0]<<std::endl;
+        }
     }
-
+    /*
+    if(tst){
+        draw_model(perspective, easycam, realsense_model, tst->t265_rawoutput, ofColor(200));
+        fisheye_left_image.setFromPixels(tst->colorimg.ptr(), 848, 800, OF_IMAGE_COLOR);
+        if(tst->tvecs_.size()>0){
+            //std::cout<<tst->tvecs_[0]<<std::endl;
+        }
+    }
+     */
     gfbo.begin();{
         ofClear(0);
         glEnable(GL_DEPTH_TEST);
@@ -149,9 +176,14 @@ void ofApp::exit(){
     uvc_cap.stopThread();
     if(rs){
         rs->stopThread();
+        delete rs;
     }
-    delete rs;
-    
+    /*
+    if(tst){
+        tst->stopThread();
+        delete tst;
+    }
+    */
 }
 //--------------------------------------------------------------
 void ofApp::gui_draw(){
@@ -233,7 +265,31 @@ void ofApp::gui_draw(){
                 }
             }
         }ImGui::End();
-    
+        /*
+        ImGui::Begin("real sense t265_");{
+            if(ImGui::IsWindowHovered()){
+                viewer.hover = true; // GUI上にマウスがあるときにcropウインドウの操作をキャンセルさせるため
+                easycam.disableMouseInput();
+            }
+            if(tst){
+                if (ImGui::Button(" connect ")) {
+                    if(tst->connect()){
+                        tst->startThread();
+                    }else{
+                        delete rs;
+                        rs = nullptr;
+                    }
+                }
+            }
+            if(rs){
+                ImGui::SliderFloat("process", &rs->iProcessCov, 0.00f, 200.0f);
+                ImGui::SliderFloat("measure", &rs->iMeasurementCov, 0.00f, 200.0f);
+                if (ImGui::Button(" kill ")) {
+                    tst->stopThread();
+                }
+            }
+        }ImGui::End();
+         */
         ImGui::Begin("endoscope");{
             if(ImGui::IsWindowHovered()){
                 viewer.hover = true; // GUI上にマウスがあるときにcropウインドウの操作をキャンセルさせるため

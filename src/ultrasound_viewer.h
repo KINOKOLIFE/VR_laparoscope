@@ -51,6 +51,7 @@ class object_{
             px = start_px + vec.x - strat_mouse_x;
             py = start_py + vec.y - start_mouse_y;
             selected = true;
+            updated = true;
         }
     }
     void mouse_drag(float x, float y){
@@ -58,6 +59,7 @@ class object_{
             px = start_px + x - strat_mouse_x;
             py = start_py + y - start_mouse_y;
             selected = true;
+            updated = true;
         }
     }
     bool mouse_press(glm::vec2 vec){
@@ -154,6 +156,13 @@ public:
     //float image_width, image_height; //もしかしたら不要かもしれない
     std::vector<object_> rectangle_;
     std::vector<std::shared_ptr<object_> > gause;
+    
+    float pixelper10mm;
+    float croppedHight;
+    float croppedWIdth;
+    float croppedPx;
+    float croppedPy;
+    
     Viewer(float _x, float _y, float _w, float _h):px(_x), py(_y), width(_w), height(_h){
         //https://qiita.com/MusicScience37/items/1ba81db1592c974f0632
         auto d1 = std::make_shared<Holizontal>();
@@ -191,22 +200,62 @@ public:
         for(int i = 0; i < 3; i++){
             gause[i]->draw(fbo);
         }
-
+        if(rectangle_[0].updated){
+            if(rectangle_[0].px  > rectangle_[1].px - 40 ){
+                rectangle_[0].px = rectangle_[1].px - 40;
+            }
+            if(rectangle_[0].py  > rectangle_[3].py - 40 ){
+                rectangle_[0].py = rectangle_[3].py - 40;
+            }
+            rectangle_[1].py = rectangle_[0].py;
+            rectangle_[3].px = rectangle_[0].px;
+        }
+        if(rectangle_[1].updated){
+            if(rectangle_[1].px  < rectangle_[0].px + 40 ){
+                rectangle_[1].px = rectangle_[0].px + 40;
+            }
+            if(rectangle_[1].py  > rectangle_[2].py - 40 ){
+                rectangle_[1].py = rectangle_[2].py - 40;
+            }
+     
+            rectangle_[0].py = rectangle_[1].py;
+            rectangle_[2].px = rectangle_[1].px;
+        }
+        if(rectangle_[2].updated){
+            if(rectangle_[2].px  < rectangle_[3].px + 40 ){
+                rectangle_[2].px = rectangle_[3].px + 40;
+            }
+            if(rectangle_[2].py  < rectangle_[1].py + 40 ){
+                rectangle_[2].py = rectangle_[1].py + 40;
+            }
+            rectangle_[3].py = rectangle_[2].py;
+            rectangle_[1].px = rectangle_[2].px;
+        }
+        if(rectangle_[3].updated){
+            if(rectangle_[3].px  > rectangle_[2].px - 40 ){
+                rectangle_[3].px = rectangle_[2].px - 40;
+            }
+            if(rectangle_[3].py  < rectangle_[1].py + 40 ){
+                rectangle_[3].py = rectangle_[1].py + 40;
+            }
+            rectangle_[2].py = rectangle_[3].py;
+            rectangle_[0].px = rectangle_[3].px;
+        }
+        fbo.begin();{
+            ofSetColor(ofColor::fromHsb(200, 255, 255));
+            ofDrawLine(rectangle_[0].px, rectangle_[0].py,  rectangle_[1].px, rectangle_[1].py);
+            ofDrawLine(rectangle_[1].px, rectangle_[1].py,  rectangle_[2].px, rectangle_[2].py);
+            ofDrawLine(rectangle_[2].px, rectangle_[2].py,  rectangle_[3].px, rectangle_[3].py);
+            ofDrawLine(rectangle_[3].px, rectangle_[3].py,  rectangle_[3].px, rectangle_[1].py);
+        }fbo.end();
         for(auto &a :rectangle_){
             a.draw(fbo);
             a.updated = false;
         }
+        //-----calc cropped
+        pixelper10mm = abs(gause[0]->py - gause[1]->py);
+        
     }
-    /*
-    void draw(ofFbo &fbo){
-        for(int i = 0; i < 3; i++){
-            gause[i]->draw(fbo);
-        }
-        for(auto a :rectangle_){
-            a.draw(fbo);
-        }
-    }
-     */
     void mouse(int x, int y, int button, int function){
         if(inner( x, y )){
             switch (function) {
