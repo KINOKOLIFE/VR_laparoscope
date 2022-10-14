@@ -5,13 +5,14 @@ ofxAssimpModelLoader realsense_model;
 std::vector<ofFbo> fboes;
 ofMesh realsense_mesh;
 ofMesh drawing_plane;
+
 //--------------------------------------------------------------
 void ofApp::setup(){
     viewer.fbo_allocate(fbo);
     //------imGUI セットアップ
     gui.setup();
     //--video capture
-    uvc_cap.get_camera_list(uvc_list);
+    uvc_cap.get_camera_list();
     //3d perspective
     perspective.allocate(424, 400);
     easycam.setControlArea(area2);
@@ -20,6 +21,7 @@ void ofApp::setup(){
     //--
     realsense_model.loadModel("realsense_model/t265.obj",true);
     realsense_model.setScaleNormalization(false);
+
     realsense_mesh = realsense_model.getMesh(0);;
     setNormals(realsense_mesh);
     //ofEnableSmoothing();
@@ -30,7 +32,8 @@ void ofApp::setup(){
     ofAddListener(HID->up_button1, this, &ofApp::button_1_up);
     ofAddListener(HID->up_button2, this, &ofApp::button_2_up);
     ofAddListener(HID->up_button3, this, &ofApp::button_3_up);
-    if(HID->setup()){
+    hid_setup = HID->setup();
+    if(hid_setup){
         HID->startThread();
     }
     //--gbuffer
@@ -43,12 +46,7 @@ void ofApp::setup(){
     //fov = 2.0 * atan( camHeight / 2.0 / camera_matirx_height ) / M_PI * 180;
     // screen height /2.0   :   fy    -> most important code
     //cam.setFov(fov);
-/*
-    tst = new testthread();
-    tst->setup();
-    tst->connect();
-    tst->startThread();
-  */
+   
 }
 
 //--------------------------------------------------------------
@@ -64,6 +62,15 @@ void ofApp::update(){
     perspective.begin();
     easycam.begin();
     m.draw();
+    if(uvc_cap.setup){
+  
+    }
+    for(int i = 0; i < objs.size(); i++){
+        ofLight l;
+        l.enable();
+        objs[i].model.setPosition(0, 0, 250);
+        objs[i].model.drawFaces();
+    }
     easycam.end();
     perspective.end();
     if(rs){
@@ -74,15 +81,6 @@ void ofApp::update(){
             //std::cout<<tst->tvecs_[0]<<std::endl;
         }
     }
-    /*
-    if(tst){
-        draw_model(perspective, easycam, realsense_model, tst->t265_rawoutput, ofColor(200));
-        fisheye_left_image.setFromPixels(tst->colorimg.ptr(), 848, 800, OF_IMAGE_COLOR);
-        if(tst->tvecs_.size()>0){
-            //std::cout<<tst->tvecs_[0]<<std::endl;
-        }
-    }
-     */
     gfbo.begin();{
         ofClear(0);
         glEnable(GL_DEPTH_TEST);
@@ -110,9 +108,27 @@ void ofApp::update(){
                             drawing_plane.draw();
                         }ofPopMatrix();
                     }
+   
                     geo_shader.setUniform1i("u_isLight", 1);
                     geo_shader.setUniform4f("color" , glm::vec4(0.5 ,0.5 ,0.5 ,1.0));
                     realsense_mesh.draw();
+                    ofMesh m;
+                    geo_shader.setUniform4f("color" , glm::vec4(1.0 ,0.0 ,0.0 ,1.0));
+                    m = rectMesh(0,0,100,100,true);
+                    setNormals(m);
+                    m.draw();
+                    ofPushMatrix();
+                    ofTranslate(0,0, 250);
+                    geo_shader.setUniform4f("color" , glm::vec4(1.0 ,1.0 ,0.0 ,1.0));
+                 
+                    for(int i = 0; i < objs.size(); i++){
+                        for(int j = 0; j < objs[i].mesh_.size(); j++){
+                            //geo_shader.setUniform4f("color" , glm::vec4(0.5 + j * 0.1 ,1.0 - j * 0.1 ,1.0 ,1.0));
+                            objs[i].mesh_[j].drawFaces();
+                        }
+                    }
+                 
+                    ofPopMatrix();
                     geo_shader.setUniform4f("color" , glm::vec4(0.4 ,0.4 ,0.4 ,0.6));
                     //ofDrawGrid(10,10,false,true,false,false);
                     ofDrawGrid(10,10,false,false,false,true);
@@ -173,17 +189,12 @@ void ofApp::button_3_up(bool &b){
 }
 //--------------------------------------------------------------
 void ofApp::exit(){
+    viewer.exit();
     uvc_cap.stopThread();
     if(rs){
         rs->stopThread();
         delete rs;
     }
-    /*
-    if(tst){
-        tst->stopThread();
-        delete tst;
-    }
-    */
 }
 //--------------------------------------------------------------
 void ofApp::gui_draw(){
@@ -220,20 +231,27 @@ void ofApp::gui_draw(){
             }else{
                 
             }
-            const char* listbox_items[uvc_list.size()];
-            for(size_t i = 0; i < uvc_list.size(); i++){
-                    listbox_items[i] = uvc_list[i].c_str();//https://www.sejuku.net/blog/52403
+            const char* listbox_items[uvc_cap.devices_list.size()];
+            for(size_t i = 0; i < uvc_cap.devices_list.size(); i++){
+                    listbox_items[i] = uvc_cap.devices_list[i].c_str();//https://www.sejuku.net/blog/52403
             }
             //https://qiita.com/ousttrue/items/ae7c8d5715adffc5b1fa
             static int listbox_item_current = 0;
             if(ImGui::ListBox("", &listbox_item_current, listbox_items, IM_ARRAYSIZE(listbox_items), 3)){
                 string s = listbox_items[listbox_item_current];
-                std::cout<<s<<std::endl;
                 if( std::equal(s.begin() , s.begin() + 7, "H264 USB") ){
+                    uvc_cap.set_param(listbox_item_current,1280,720);
+                }
+                if( std::equal(s.begin() , s.begin() + 9, "FaceTime HD") ){
                     uvc_cap.set_param(listbox_item_current,1280,720);
                 }
                 if(!uvc_cap.isThreadRunning()){
                     uvc_cap.startThread();
+                }
+            }
+            if(uvc_cap.setup){
+                if (ImGui::Button(" capture ")) {
+                    uvc_cap.capture();
                 }
             }
             ImGui::Text("Hello");
@@ -265,31 +283,41 @@ void ofApp::gui_draw(){
                 }
             }
         }ImGui::End();
-        /*
-        ImGui::Begin("real sense t265_");{
+        ImGui::Begin("read CT model");{
             if(ImGui::IsWindowHovered()){
-                viewer.hover = true; // GUI上にマウスがあるときにcropウインドウの操作をキャンセルさせるため
+                viewer.hover = true;
                 easycam.disableMouseInput();
             }
-            if(tst){
-                if (ImGui::Button(" connect ")) {
-                    if(tst->connect()){
-                        tst->startThread();
-                    }else{
-                        delete rs;
-                        rs = nullptr;
+            if (ImGui::Button(" open obj file ")) {
+                ofFileDialogResult result = ofSystemLoadDialog("Load file");
+                if(result.bSuccess) {
+         
+                    string path = result.getPath();
+                    ofxAssimpModelLoader model_segmentaion;
+                    objLoader o = objLoader(path);
+                    if(o.set){
+                        objs.push_back(o);
                     }
                 }
             }
-            if(rs){
-                ImGui::SliderFloat("process", &rs->iProcessCov, 0.00f, 200.0f);
-                ImGui::SliderFloat("measure", &rs->iMeasurementCov, 0.00f, 200.0f);
-                if (ImGui::Button(" kill ")) {
-                    tst->stopThread();
+            for(int i; i < objs.size(); i++){
+                if(objs[i].show){
+                    if (ImGui::Button(" hide ")) {
+                        objs[i].show = false;
+                    }
+                }else{
+                    if (ImGui::Button(" show ")) {
+                        objs[i].show = true;
+                    }
                 }
+                char* c = const_cast<char*>(objs[i].thum.c_str());
+                ImGui::SameLine();ImGui::Text(c);
+                static float col2[3] = { 1.0f,0.0f,0.2f };
+                //static float col2[4] = { 0.4f,0.7f,0.0f,0.5f };
+                ImGui::ColorEdit3("color", col2);
             }
+            
         }ImGui::End();
-         */
         ImGui::Begin("endoscope");{
             if(ImGui::IsWindowHovered()){
                 viewer.hover = true; // GUI上にマウスがあるときにcropウインドウの操作をキャンセルさせるため

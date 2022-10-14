@@ -3,12 +3,12 @@
 
 class capture_thread : public ofThread {
 public:
-    void get_camera_list(std::vector<string> &list){
+    void get_camera_list(){
         devices = cam.listDevices();
         const char* listbox_items[devices.size()];
         for(size_t i = 0; i < devices.size(); i++){
             if(devices[i].bAvailable){
-                list.push_back( (devices[i].deviceName).c_str() );//https://www.sejuku.net/blog/52403
+                devices_list.push_back( (devices[i].deviceName).c_str() );//https://www.sejuku.net/blog/52403
             }
         }
     }
@@ -26,6 +26,9 @@ public:
             cam.draw(-10,-100);
         }fbo.end();
     }
+    void capture(){
+        std::cout<<"capture!"<<std::endl;
+    }
     void threadedFunction() {
         while(isThreadRunning()) {
             cam.update();
@@ -40,6 +43,7 @@ public:
     int cameraID;
     ofVideoGrabber cam; // the cam
     vector<ofVideoDevice> devices ;
+    std::vector<string> devices_list;
     ofPixels pixels;
     int width, height;
     bool setup;

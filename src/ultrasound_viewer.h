@@ -164,6 +164,9 @@ public:
     float croppedPy;
     
     Viewer(float _x, float _y, float _w, float _h):px(_x), py(_y), width(_w), height(_h){
+        
+        
+
         //https://qiita.com/MusicScience37/items/1ba81db1592c974f0632
         auto d1 = std::make_shared<Holizontal>();
         auto d2 = std::make_shared<Holizontal>();
@@ -178,6 +181,27 @@ public:
         rectangle_.push_back(object_(width - 20, 10,         60,6));
         rectangle_.push_back(object_(width - 20,height - 10, 60,6));
         rectangle_.push_back(object_(10,height - 10,         60,6));
+        try{
+            ofJson js;
+            ofFile file("us_viewer_setting.json"); //aruco marker arrayの頂点ファイル
+            file >> js;
+            gause[0]->py = js["pt"][0][0];
+            gause[1]->py = js["pt"][0][1];
+            gause[2]->px = js["pt"][0][2];
+            rectangle_[0].px = js["pt"][0][3];
+            rectangle_[0].py = js["pt"][0][4];
+            rectangle_[2].px = js["pt"][0][5];
+            rectangle_[2].py = js["pt"][0][6];
+            rectangle_[1].px = rectangle_[2].px;
+            rectangle_[1].py = rectangle_[0].py;
+            rectangle_[3].px = rectangle_[0].px;
+            rectangle_[3].py = rectangle_[2].py;
+            std::cout<<"read us setting file"<<std::endl;
+            }
+            catch(...)
+            {
+                std::cout<<"cannot read file"<<std::endl;
+            }
     }
     Viewer(){
     }
@@ -255,6 +279,19 @@ public:
         //-----calc cropped
         pixelper10mm = abs(gause[0]->py - gause[1]->py);
         
+    }
+    void exit(){
+        ofJson j;
+        ofJson pt;
+        pt[0] = gause[0]->py;
+        pt[1] = gause[1]->py;
+        pt[2] = gause[2]->px;
+        pt[3] = rectangle_[0].px;
+        pt[4] = rectangle_[0].py;
+        pt[5] = rectangle_[2].px;
+        pt[6] = rectangle_[2].py;
+        j["pt"].push_back(pt);
+        ofSaveJson("us_viewer_setting.json", j);
     }
     void mouse(int x, int y, int button, int function){
         if(inner( x, y )){

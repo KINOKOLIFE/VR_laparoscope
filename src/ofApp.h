@@ -18,8 +18,8 @@
 #include "graphics.h"
 #include "realsense.h"
 #include "hid.h"
-//#include "testthread.h"
 #include "aruco_manager.h"
+#include "objLoader.h"
 
 class ofApp : public ofBaseApp{
 
@@ -46,7 +46,7 @@ class ofApp : public ofBaseApp{
     ofxImGui::Gui gui;
     void gui_draw();
     //----uvc camera
-    std::vector<string> uvc_list;
+
     ofImage UVCimage;
     capture_thread uvc_cap;
     //---3d pespective
@@ -70,9 +70,11 @@ class ofApp : public ofBaseApp{
     void button_2_up(bool &b);
     void button_3_up(bool &b);
     hid *HID;
+    bool hid_setup;
     //------endoscope
     float fov = 60.0f;
     //testthread *tst;
     //------aruco
     aruco_manager aruco_manager_();
+    vector<objLoader> objs;
 };
