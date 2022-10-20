@@ -20,6 +20,7 @@
 #include "hid.h"
 #include "aruco_manager.h"
 #include "objLoader.h"
+#include "gizmo3d.h"
 
 class ofApp : public ofBaseApp{
 
@@ -77,4 +78,8 @@ class ofApp : public ofBaseApp{
     //------aruco
     aruco_manager aruco_manager_();
     vector<objLoader> objs;
+    //-------fake_camera
+    ofEasyCam gizmocam;
+    gizmo3d mygizmo;
+
 };

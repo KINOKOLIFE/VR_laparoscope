@@ -117,7 +117,13 @@ static Eigen::Matrix4d glm_Eigen(glm::mat4x4  &mat){
 };
 
 //------------------
-
+static void fake_draw(ofFbo &fbo,ofEasyCam &cam){
+    fbo.begin();
+    ofBackground(50);
+        cam.begin();
+        cam.end();
+    fbo.end();
+};
 static void drawTerrios(ofFbo &fbo,ofEasyCam &cam){
     ofEnableAlphaBlending();
     ofEnableBlendMode(OF_BLENDMODE_ALPHA);

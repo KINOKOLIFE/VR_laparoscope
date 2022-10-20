@@ -6,6 +6,7 @@ std::vector<ofFbo> fboes;
 ofMesh realsense_mesh;
 ofMesh drawing_plane;
 
+
 //--------------------------------------------------------------
 void ofApp::setup(){
     viewer.fbo_allocate(fbo);
@@ -46,33 +47,45 @@ void ofApp::setup(){
     //fov = 2.0 * atan( camHeight / 2.0 / camera_matirx_height ) / M_PI * 180;
     // screen height /2.0   :   fy    -> most important code
     //cam.setFov(fov);
-   
-}
+   //--gizmo
+    gizmocam.setControlArea(area2);
 
+
+}
 //--------------------------------------------------------------
 void ofApp::update(){
+
+    mygizmo.unable_easycam(easycam);
+    
     viewer.update(fbo);
     viewer.hover = false;
-    easycam.enableMouseInput();
     drawTerrios(perspective, easycam);
-    
+ 
     ofMesh m;
     m = rectMesh(0,0,100,100,true);
     setNormals(m);
-    perspective.begin();
-    easycam.begin();
-    m.draw();
-    if(uvc_cap.setup){
+    mygizmo.update(gizmocam);
+    perspective.begin();{
+        easycam.begin();{
+            ofPushMatrix();{
+                if(uvc_cap.setup){
+                    UVCimage.getTexture().bind();
+                    m.draw();
+                    UVCimage.getTexture().unbind();
+                }
+                for(int i = 0; i < objs.size(); i++){
+                    ofLight l;
+                    l.enable();
+                    objs[i].model.setPosition(0, 0, 250);
+                    objs[i].model.drawFaces();
+                }
+                ofMultMatrix(mygizmo.model);
+                ofDrawBox(40);
+            }ofPopMatrix();
+        }easycam.end();
+    }perspective.end();
+    
   
-    }
-    for(int i = 0; i < objs.size(); i++){
-        ofLight l;
-        l.enable();
-        objs[i].model.setPosition(0, 0, 250);
-        objs[i].model.drawFaces();
-    }
-    easycam.end();
-    perspective.end();
     if(rs){
         draw_model(perspective, easycam, realsense_model, rs->t265_rawoutput, ofColor(200));
         //fisheye_left_image.setFromPixels(rs->fisheye_left_cvimage.ptr(), 848, 800, OF_IMAGE_GRAYSCALE);
@@ -119,7 +132,7 @@ void ofApp::update(){
                     m.draw();
                     ofPushMatrix();
                     ofTranslate(0,0, 250);
-                    geo_shader.setUniform4f("color" , glm::vec4(1.0 ,1.0 ,0.0 ,1.0));
+                    geo_shader.setUniform4f("color" , glm::vec4(0.5 ,0.5 ,0.5,1.0));
                  
                     for(int i = 0; i < objs.size(); i++){
                         for(int j = 0; j < objs[i].mesh_.size(); j++){
@@ -150,11 +163,13 @@ void ofApp::update(){
             phong_shader.setUniformTexture("gPosition", g_buffer.getTexture(0), 0);
             phong_shader.setUniformTexture("gNormal", g_buffer.getTexture(1), 1);
             phong_shader.setUniformTexture("gAlbedo", g_buffer.getTexture(2), 2);
-            phong_shader.setUniform3f("u_lightPos", ofVec3f(1.0, 1.0, 3.0) * viewMatrix);
+            phong_shader.setUniform3f("u_lightPos", ofVec3f(20.0, 50.0, 30.0) * viewMatrix);
             phong_shader.setUniform3f("viewPos", easycam.getPosition());
             quad.draw();
         }phong_shader.end();
     }gfbo.end();
+    
+    
 }
 
 //--------------------------------------------------------------
@@ -300,6 +315,8 @@ void ofApp::gui_draw(){
                     }
                 }
             }
+            //static float col2[3] = { 1.0f,0.0f,0.2f };
+            
             for(int i; i < objs.size(); i++){
                 if(objs[i].show){
                     if (ImGui::Button(" hide ")) {
@@ -312,9 +329,10 @@ void ofApp::gui_draw(){
                 }
                 char* c = const_cast<char*>(objs[i].thum.c_str());
                 ImGui::SameLine();ImGui::Text(c);
-                static float col2[3] = { 1.0f,0.0f,0.2f };
+                
                 //static float col2[4] = { 0.4f,0.7f,0.0f,0.5f };
-                ImGui::ColorEdit3("color", col2);
+                //ImGui::ColorEdit3("color", col2);
+                //ImGui::ColorEdit3("color", col3);
             }
             
         }ImGui::End();
@@ -324,17 +342,18 @@ void ofApp::gui_draw(){
                 easycam.disableMouseInput();
             }
             if (ImGui::Button("on")) {
-                
+                //easycamEnable = !easycamEnable;
             }
-            ImGui::SliderFloat("Float", &fov, 40.0f, 120.0f);
-            
+            if(ImGui::SliderFloat("Float", &fov, 40.0f, 120.0f)){
+                easycam.setFov(fov);
+            }
         }ImGui::End();
     }gui.end();
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-
+    mygizmo.enable_gozmo(gizmocam);
 }
 
 //--------------------------------------------------------------
