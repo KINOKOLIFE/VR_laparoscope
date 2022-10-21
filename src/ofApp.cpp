@@ -80,6 +80,7 @@ void ofApp::update(){
                     objs[i].model.drawFaces();
                 }
                 ofMultMatrix(mygizmo.model);
+                ofTranslate(20, 20, -20);
                 ofDrawBox(40);
             }ofPopMatrix();
         }easycam.end();
