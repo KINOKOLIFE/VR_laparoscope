@@ -59,6 +59,7 @@ class ofApp : public ofBaseApp{
     ofRectangle area2 = ofRectangle(0,400,424,400);
     //realsense
     rs265 *rs;
+    rs265 realsense265;
     
     //gbuffer
     ofMesh quad; // 表示用板ポリ
