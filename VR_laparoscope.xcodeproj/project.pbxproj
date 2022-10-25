@@ -116,6 +116,7 @@
 		D825FF1F1EA48B305BB428B7 /* scene.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = scene.h; path = ../../../addons/ofxAssimpModelLoader/libs/assimp/include/assimp/scene.h; sourceTree = SOURCE_ROOT; };
 		D91100C1FBA245AD6CB55BD3 /* ofxImGui.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ofxImGui.h; path = ../../../addons/ofxImGui/src/ofxImGui.h; sourceTree = SOURCE_ROOT; };
 		E135C7F22D40FCFD9C5AB94B /* imgui.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = imgui.h; path = ../../../addons/ofxImGui/libs/imgui/src/imgui.h; sourceTree = SOURCE_ROOT; };
+		E237D4B329022C4C00234E6B /* image_stacker.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = image_stacker.h; sourceTree = "<group>"; };
 		E2BF109B28F25ADF0006E851 /* libhidapi.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libhidapi.dylib; path = ../../../../../../../usr/local/lib/libhidapi.dylib; sourceTree = "<group>"; };
 		E2BF109D28F25B270006E851 /* hid.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hid.h; sourceTree = "<group>"; };
 		E2BF10A028F30DF70006E851 /* aruco_manager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = aruco_manager.h; sourceTree = "<group>"; };
@@ -124,6 +125,8 @@
 		E2CF094028EEEB390041FE7D /* sheared_stracture.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sheared_stracture.h; sourceTree = "<group>"; };
 		E2CF094128EEF6EB0041FE7D /* uvc_capture.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = uvc_capture.h; sourceTree = "<group>"; };
 		E2D0AD89290024AA00330EF4 /* gizmo3d.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gizmo3d.h; sourceTree = "<group>"; };
+		E2D912A82904579B00482803 /* gBuff.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gBuff.h; sourceTree = "<group>"; };
+		E2D912A92905339400482803 /* stack.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stack.h; sourceTree = "<group>"; };
 		E2FE08A628EFF16900B29ADE /* graphics.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = graphics.h; sourceTree = "<group>"; };
 		E2FE08A828EFF3FF00B29ADE /* librealsense2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = librealsense2.dylib; path = ../../../../../librealsense/build/librealsense2.dylib; sourceTree = "<group>"; };
 		E2FE08AA28EFF41500B29ADE /* libceres.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libceres.dylib; path = "../../../../../../../usr/local/Cellar/ceres-solver/2.0.0_4/lib/libceres.dylib"; sourceTree = "<group>"; };
@@ -872,6 +875,9 @@
 				E2BF10A028F30DF70006E851 /* aruco_manager.h */,
 				E2BF10B528F6330B0006E851 /* objLoader.h */,
 				E2D0AD89290024AA00330EF4 /* gizmo3d.h */,
+				E237D4B329022C4C00234E6B /* image_stacker.h */,
+				E2D912A82904579B00482803 /* gBuff.h */,
+				E2D912A92905339400482803 /* stack.h */,
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;

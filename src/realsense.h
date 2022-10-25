@@ -28,12 +28,17 @@ public:
     vector<int> markerIdL_;
     std::vector<cv::Vec3d> tvecs_;
     std::vector<cv::Vec3d> rvecs_;
+    Eigen::Matrix4d tanslate_ultrasound;
+    Eigen::Matrix4d ultrasound;
+    Eigen::Matrix4d tanslate_scope;
+    Eigen::Matrix4d scope;
 //------------
     void setup(){
         t265_rawoutput.setIdentity();
         t265_collect.setIdentity();
+        ultrasound.setIdentity();
         fisheye_left_cvimage = cv::Mat::zeros(cv::Size(848, 800),CV_8UC1);
-        colorimg = cv::Mat::zeros(cv::Size(848, 800),CV_8UC1);
+        colorimg = cv::Mat::zeros(cv::Size(848, 800),CV_8UC3);//1
         fisheye_left_image.allocate(848, 800, OF_IMAGE_GRAYSCALE);
         cv::FileStorage fs("/Users/takakiyoshiroshi/Downloads/of_v0.11.0_osx_release/apps/myApps/VR_laparoscope/bin/data/camera.xml", cv::FileStorage::READ);
         fs["intrinsic"] >> intrinsic;
@@ -50,6 +55,14 @@ public:
         //--aruco
         dictionary = getPredefinedDictionary(cv::aruco::DICT_4X4_250);
         parameters = cv::aruco::DetectorParameters::create();
+        tanslate_ultrasound << 1, 0, 0, 60,
+                                0, 1, 0, 0,
+                                0, 0, 1, 0,
+        0, 0, 0, 1;
+        tanslate_scope << 1, 0, 0, -100,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+0, 0, 0, 1;
     }
     bool connect(){
         std::cout<<"t265 conneting....."<<std::endl;
@@ -95,7 +108,10 @@ public:
                     Mat.block<3,1>(0,3) = T;
                     Mat.block<3,3>(0,0) = m;
                     
-                    t265_rawoutput = Eigen::Matrix4d(Mat);
+                        t265_rawoutput = Eigen::Matrix4d(Mat);
+                        ultrasound = t265_rawoutput * roty(180) * tanslate_ultrasound * rotz(-90);
+                        scope = t265_rawoutput * tanslate_scope * roty(-90) * rotx(180) * rotz(90) ;
+                    
                     KF.dt = static_cast<double>(std::clock() - start)/ 1000.0;
                     KF.Predict();
                     t265_collect = KF.Correct(t265_rawoutput);
@@ -106,18 +122,20 @@ public:
                     vector<vector<cv::Point2f>> markerCornersL, rejectedCandidatesL;
                     vector<int> markerIdsL;
                     detectMarkers(fisheye_left_cvimage, dictionary, markerCornersL, markerIdsL, parameters, rejectedCandidatesL);
-                    cv::cvtColor(fisheye_left_cvimage, colorimg, cv::COLOR_GRAY2RGB);
-                    cv::aruco::drawDetectedMarkers(colorimg, markerCornersL, markerIdsL);
-                    std::vector<cv::Vec3d> rvecs, tvecs;
-                    cv::aruco::estimatePoseSingleMarkers(markerCornersL, 26, intrinsic, distortion, rvecs, tvecs);
-                    for( int i = 0; i < markerIdsL.size(); i++){
-                        cv::aruco::drawAxis(colorimg, intrinsic, distortion, rvecs[i], tvecs[i], 13);
-                    }
-                    markerIdL_ = markerIdsL;
-                    lock();{
+                   
+                        cv::cvtColor(fisheye_left_cvimage, colorimg, cv::COLOR_GRAY2RGB);//RGB
+                        cv::aruco::drawDetectedMarkers(colorimg, markerCornersL, markerIdsL);
+                        std::vector<cv::Vec3d> rvecs, tvecs;
+                        cv::aruco::estimatePoseSingleMarkers(markerCornersL, 26, intrinsic, distortion, rvecs, tvecs);
+                        for( int i = 0; i < markerIdsL.size(); i++){
+                            cv::aruco::drawAxis(colorimg, intrinsic, distortion, rvecs[i], tvecs[i], 13);
+                        }
+
+                        markerIdL_ = markerIdsL;
+                    lock();
                         tvecs_ = tvecs;
                         rvecs_ = rvecs;
-                    }unlock();
+                    unlock();
                 }
             }
             catch(...)

@@ -12,7 +12,7 @@
 #include <Eigen/LU>
 
 #include "ofxImGui.h"
-#include "ultrasound_viewer.h"
+//#include "ultrasound_viewer.h"
 #include "sheared_stracture.h"
 #include "uvc_capture.h"
 #include "graphics.h"
@@ -21,6 +21,9 @@
 #include "aruco_manager.h"
 #include "objLoader.h"
 #include "gizmo3d.h"
+//#include "image_stacker.h"
+#include "gBuff.h"
+#include "stack.h"
 
 class ofApp : public ofBaseApp{
 
@@ -81,5 +84,13 @@ class ofApp : public ofBaseApp{
     //-------fake_camera
     ofEasyCam gizmocam;
     gizmo3d mygizmo;
-
+    //------image stack
+    //Image_stacker image_stacker;
+    //imageStack stk;
+    //--g-bffer
+    gbf g_buf;
+    ofCamera endoscope_camera;
+    
+    //--
+    
 };

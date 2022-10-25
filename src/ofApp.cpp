@@ -1,15 +1,18 @@
 #include "ofApp.h"
-Viewer viewer(0 ,0 ,480, 270);
+
 ofImage fisheye_left_image;
 ofxAssimpModelLoader realsense_model;
 std::vector<ofFbo> fboes;
 ofMesh realsense_mesh;
 ofMesh drawing_plane;
+satackviewer::manager viewer;
+//----
 
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-    viewer.fbo_allocate(fbo);
+    //-----
+    viewer.setup(0 ,0 ,480, 270);
     //------imGUI セットアップ
     gui.setup();
     //--video capture
@@ -49,18 +52,14 @@ void ofApp::setup(){
     //cam.setFov(fov);
    //--gizmo
     gizmocam.setControlArea(area2);
-
-
 }
 //--------------------------------------------------------------
 void ofApp::update(){
-
-    mygizmo.unable_easycam(easycam);
-    
-    viewer.update(fbo);
-    viewer.hover = false;
-    drawTerrios(perspective, easycam);
+    UVCimage.setFromPixels(uvc_cap.pixels);
+    viewer.update(UVCimage);
  
+    mygizmo.unable_easycam(easycam);
+    drawTerrios(perspective, easycam);
     ofMesh m;
     m = rectMesh(0,0,100,100,true);
     setNormals(m);
@@ -69,9 +68,17 @@ void ofApp::update(){
         easycam.begin();{
             ofPushMatrix();{
                 if(uvc_cap.setup){
-                    UVCimage.getTexture().bind();
-                    m.draw();
-                    UVCimage.getTexture().unbind();
+                    ofDisableArbTex();
+                    if(rs){
+                        ofDisableArbTex();
+                        ofPushMatrix();
+                            ofMultMatrix(eigen_glm(rs->ultrasound));
+                            UVCimage.getTexture().bind();
+                            m.draw();
+                            UVCimage.getTexture().unbind();
+                        ofPopMatrix();
+                    
+                    }
                 }
                 for(int i = 0; i < objs.size(); i++){
                     ofLight l;
@@ -85,92 +92,25 @@ void ofApp::update(){
             }ofPopMatrix();
         }easycam.end();
     }perspective.end();
-    
+
   
     if(rs){
         draw_model(perspective, easycam, realsense_model, rs->t265_rawoutput, ofColor(200));
+        draw_axis(perspective, easycam, rs->ultrasound);
+        draw_axis(perspective, easycam, rs->scope);
         //fisheye_left_image.setFromPixels(rs->fisheye_left_cvimage.ptr(), 848, 800, OF_IMAGE_GRAYSCALE);
+        std::cout<<rs->colorimg.type()<<std::endl;
         fisheye_left_image.setFromPixels(rs->colorimg.ptr(), 848, 800, OF_IMAGE_COLOR);
         if(rs->tvecs_.size()>0){
             //std::cout<<tst->tvecs_[0]<<std::endl;
         }
     }
-    gfbo.begin();{
-        ofClear(0);
-        glEnable(GL_DEPTH_TEST);
-        //1. render geometry to G-Buffer-------------------------------
-        ofMatrix4x4 viewMatrix;
-        g_buffer.begin();{
-            g_buffer.activateAllDrawBuffers();
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            easycam.begin();{
-                projection_matrix = easycam.getProjectionMatrix();
-                viewMatrix = ofGetCurrentViewMatrix();
-                geo_shader.begin();{
-                    geo_shader.setUniformMatrix4f("view", viewMatrix);
-                    geo_shader.setUniformMatrix4f("projection", projection_matrix);
-                    geo_shader.setUniform1i("u_isLight", 0);
-          
-                    int deg = 0;
-                    for(auto &f:fboes){
-                        ofPushMatrix();{
-                            ofRotateXDeg(deg);
-                            deg += 30;
-                            ofTranslate(0,-0.5,0);
-                            geo_shader.setUniformTexture("image", f.getTexture(), 0);
-                            drawing_plane.draw();
-                        }ofPopMatrix();
-                    }
+    if(rs){
+        g_buf.camera_mat << rs->scope;
+    }
+    g_buf.update(gfbo, easycam, endoscope_camera);
+    
    
-                    geo_shader.setUniform1i("u_isLight", 1);
-                    geo_shader.setUniform4f("color" , glm::vec4(0.5 ,0.5 ,0.5 ,1.0));
-                    realsense_mesh.draw();
-                    ofMesh m;
-                    geo_shader.setUniform4f("color" , glm::vec4(1.0 ,0.0 ,0.0 ,1.0));
-                    m = rectMesh(0,0,100,100,true);
-                    setNormals(m);
-                    m.draw();
-                    ofPushMatrix();
-                    ofTranslate(0,0, 250);
-                    geo_shader.setUniform4f("color" , glm::vec4(0.5 ,0.5 ,0.5,1.0));
-                 
-                    for(int i = 0; i < objs.size(); i++){
-                        for(int j = 0; j < objs[i].mesh_.size(); j++){
-                            //geo_shader.setUniform4f("color" , glm::vec4(0.5 + j * 0.1 ,1.0 - j * 0.1 ,1.0 ,1.0));
-                            objs[i].mesh_[j].drawFaces();
-                        }
-                    }
-                 
-                    ofPopMatrix();
-                    geo_shader.setUniform4f("color" , glm::vec4(0.4 ,0.4 ,0.4 ,0.6));
-                    //ofDrawGrid(10,10,false,true,false,false);
-                    ofDrawGrid(10,10,false,false,false,true);
-                    ofPushMatrix();
-                    ofTranslate(0.1,0.1,0.1);
-                    geo_shader.setUniform4f("color" , glm::vec4(1.0 ,0.0 ,0.0 ,1.0));
-                    ofDrawLine(0,0,0,100,0,0);
-                    geo_shader.setUniform4f("color" , glm::vec4(0.0 ,1.0 ,0.0 ,1.0));
-                    ofDrawLine(0,0,0,0,100,0);
-                    geo_shader.setUniform4f("color" , glm::vec4(0.0 ,0.0 ,1.0 ,1.0));
-                    ofDrawLine(0,0,0,0,0,100);
-                    ofPopMatrix();
-                }geo_shader.end();
-            }easycam.end();
-        }g_buffer.end();
-        // 3. lighting Pass--------------------------------------------
-        glDisable(GL_DEPTH_TEST);
-        phong_shader.begin();{
-            phong_shader.setUniformTexture("gPosition", g_buffer.getTexture(0), 0);
-            phong_shader.setUniformTexture("gNormal", g_buffer.getTexture(1), 1);
-            phong_shader.setUniformTexture("gAlbedo", g_buffer.getTexture(2), 2);
-            phong_shader.setUniform3f("u_lightPos", ofVec3f(20.0, 50.0, 30.0) * viewMatrix);
-            phong_shader.setUniform3f("viewPos", easycam.getPosition());
-            quad.draw();
-        }phong_shader.end();
-    }gfbo.end();
-    
-    
 }
 
 //--------------------------------------------------------------
@@ -178,13 +118,11 @@ void ofApp::draw(){
     ofDisableDepthTest();
     glDisable(GL_LIGHTING);
     fisheye_left_image.draw(480,0,424,400);
-    if(uvc_cap.setup){
-        UVCimage.setFromPixels(uvc_cap.pixels);
-        UVCimage.draw(viewer.px,  viewer.py, viewer.width, viewer.height);
-    }
-    fbo.draw(viewer.px,  viewer.py, viewer.width, viewer.height);
     perspective.draw(area2);
     gfbo.draw(480,400);
+    viewer.fbo.draw(viewer.px,  viewer.py, viewer.width, viewer.height);
+    //viewer.stacks[viewer.stacks.size() - 1].fbo.draw(0,0);
+    viewer.preview.draw(0,0);
     gui_draw();
 }
 //--------------------------------------------------------------
@@ -205,7 +143,6 @@ void ofApp::button_3_up(bool &b){
 }
 //--------------------------------------------------------------
 void ofApp::exit(){
-    viewer.exit();
     uvc_cap.stopThread();
     if(rs){
         rs->stopThread();
@@ -217,7 +154,6 @@ void ofApp::gui_draw(){
     gui.begin();{
         ImGui::Begin("ultrasound");{
             if(ImGui::IsWindowHovered()){
-                viewer.hover = true;
                 easycam.disableMouseInput();
             }
             //ImGui::Checkbox("flip", &isEnable);//https://qiita.com/Ushio/items/446d78c881334919e156
@@ -225,24 +161,91 @@ void ofApp::gui_draw(){
             if (ImGui::InputText("markup", buf, 256)) {
                
             }
-            static float col1[3] = { 1.0f,0.0f,0.2f };
-            //static float col2[4] = { 0.4f,0.7f,0.0f,0.5f };
-            ImGui::ColorEdit3("color 1", col1);
+            
+            ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, (ImVec4)ImColor(255,255,255,255));
+            ImGui::PushStyleColor(ImGuiCol_SliderGrab, (ImVec4)ImColor::HSV(viewer.hue , 1.0f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_FrameBgActive, (ImVec4)ImColor::HSV(viewer.hue , 1.0f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, (ImVec4)ImColor::HSV(viewer.hue , 1.0f, 1.0f));
+            if(ImGui::SliderFloat("HUE", &viewer.hue, 0.0f, 1.0f)){
+                viewer.change_color();
+            };
+            ImGui::PopStyleColor(4);
+            //ofColor col = ofColor::fromHsb(viewer._hue * 256,255,255 );
+            //ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, (ImVec4)ImColor(255,255,255,255));
+            if(ImGui::SliderFloat("RADIUS", &viewer.radius, 1.00f, 20.0f)){
+                viewer.change_radius();
+            };
+            
+            //static float col1[3] = { 1.0f,0.0f,0.2f };
+            //ImGui::ColorEdit3("color 1", col1);
+     /*
+            if(ImGui::Checkbox(" fill ", &viewer._fill)){
+                viewer.togglec_fill();
+            };
+            ImGui::SameLine();
+            if(ImGui::Checkbox(" erase ", &viewer._erase)){
+                viewer.togglec_erase();
+            };
+      */
             //ImGui::SameLine();
-            if (ImGui::Button("delete")) {
+            if (ImGui::Button(" delete ")) {
+                viewer.delete_marker();
 
             }
-            ImGui::SameLine();if (ImGui::Button("delete all points")) {
+            ImGui::SameLine();
+            if (ImGui::Button("delete all ")) {
+                viewer.delete_all_marker();
 
             }
-            ImGui::SameLine();if (ImGui::Button("delete plane")) {
+            if (ImGui::Button(" capture! ")) {
+                if(rs){
+                    viewer.capture(UVCimage, rs->ultrasound);
+                    
+                }else{
+                Eigen::Matrix4d m;
+                    viewer.capture(UVCimage, m);
+                }
+            }
+            
+            
+            if (ImGui::Button(" delete image ")) {
+                
 
             }
+            if (ImGui::Button("<")) {
+                viewer.backward_page();
+            }
+            ImGui::SameLine();if (ImGui::Button(">")) {
+                viewer.forward_page();
+            }
+            if (ImGui::Button("crop")) {
+                viewer.crop();
+            }
+            ImGui::SliderFloat("threshold", &viewer.threshold, 0.00f, 600.0f);
 
+            
+            ImGui::Text("gauge");
+            ImGui::SameLine();
+            if (ImGui::Button(" reset ")) {
+                
+            }
+            ImGui::SameLine();
+            if (ImGui::Button(" savet ")) {
+                
+            }
+            /*
+            
+            ImTextureID textureID = ( ImTextureID )( uintptr_t )viewer.imgui_preview.getTexture().getTextureData().textureID ;
+            //auto size = ImGui::GetContentRegionAvail() ; // for example
+            ImGui::Image( textureID, ImVec2(viewer.imgui_preview.getWidth(),viewer.imgui_preview.getHeight()) ) ;
+            */
+            ImTextureID textureID = ( ImTextureID )( uintptr_t )viewer.preview.getTexture().getTextureData().textureID ;
+            //auto size = ImGui::GetContentRegionAvail() ; // for example
+            ImGui::Image( textureID, ImVec2(viewer.preview.getWidth(),viewer.preview.getHeight()) ) ;
         }ImGui::End();
         ImGui::Begin("UVC source");{
             if(ImGui::IsWindowHovered()){
-                viewer.hover = true; // GUI上にマウスがあるときにcropウインドウの操作をキャンセルさせるため
+            // GUI上にマウスがあるときにcropウインドウの操作をキャンセルさせるため
                 easycam.disableMouseInput();
             }else{
                 
@@ -266,15 +269,15 @@ void ofApp::gui_draw(){
                 }
             }
             if(uvc_cap.setup){
-                if (ImGui::Button(" capture ")) {
-                    uvc_cap.capture();
+                if (ImGui::Button(" stop camera ")) {
+                    uvc_cap.stop_cam();
                 }
             }
             ImGui::Text("Hello");
         }ImGui::End();
         ImGui::Begin("real sense t265");{
             if(ImGui::IsWindowHovered()){
-                viewer.hover = true; // GUI上にマウスがあるときにcropウインドウの操作をキャンセルさせるため
+                //viewer.hover = true; // GUI上にマウスがあるときにcropウインドウの操作をキャンセルさせるため
                 easycam.disableMouseInput();
             }
             if(rs == nullptr){
@@ -301,7 +304,7 @@ void ofApp::gui_draw(){
         }ImGui::End();
         ImGui::Begin("read CT model");{
             if(ImGui::IsWindowHovered()){
-                viewer.hover = true;
+                //viewer.hover = true;
                 easycam.disableMouseInput();
             }
             if (ImGui::Button(" open obj file ")) {
@@ -339,11 +342,16 @@ void ofApp::gui_draw(){
         }ImGui::End();
         ImGui::Begin("endoscope");{
             if(ImGui::IsWindowHovered()){
-                viewer.hover = true; // GUI上にマウスがあるときにcropウインドウの操作をキャンセルさせるため
+                //viewer.hover = true; // GUI上にマウスがあるときにcropウインドウの操作をキャンセルさせるため
                 easycam.disableMouseInput();
             }
-            if (ImGui::Button("on")) {
-                //easycamEnable = !easycamEnable;
+            if(rs){
+                if (ImGui::Button("on")) {
+                    g_buf.endoscope = true;
+                }
+                if (ImGui::Button("g-buffer")) {
+                    //easycamEnable = !easycamEnable;
+                }
             }
             if(ImGui::SliderFloat("Float", &fov, 40.0f, 120.0f)){
                 easycam.setFov(fov);
@@ -354,7 +362,14 @@ void ofApp::gui_draw(){
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
+    if( key == 8 ){
+        viewer.delete_marker();
+    }
     mygizmo.enable_gozmo(gizmocam);
+    if(uvc_cap.setup){
+        Eigen::Matrix4d m;
+        
+    }
 }
 
 //--------------------------------------------------------------
@@ -369,17 +384,17 @@ void ofApp::mouseMoved(int x, int y ){
 
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button){
-    viewer.mouse(x, y, 0, 1);
+    viewer.mouse(x, y, button, 1);
 }
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
-    viewer.mouse(x, y, 0, 2);
+    viewer.mouse(x, y, button, 2);
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
-    viewer.mouse(x, y, 0, 3);
+    viewer.mouse(x, y, button, 3);
 }
 
 //--------------------------------------------------------------
@@ -459,3 +474,87 @@ void ofApp::gbuffer_setup(){
 }
 //-----------------------
 
+/*
+gfbo.begin();{
+    ofClear(0);
+    glEnable(GL_DEPTH_TEST);
+    //1. render geometry to G-Buffer-------------------------------
+    ofMatrix4x4 viewMatrix;
+    g_buffer.begin();{
+        g_buffer.activateAllDrawBuffers();
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        easycam.begin();{
+            projection_matrix = easycam.getProjectionMatrix();
+            viewMatrix = ofGetCurrentViewMatrix();
+            geo_shader.begin();{
+                geo_shader.setUniformMatrix4f("view", viewMatrix);
+                geo_shader.setUniformMatrix4f("projection", projection_matrix);
+                geo_shader.setUniform1i("u_isLight", 0);
+      
+                int deg = 0;
+                for(auto &f:fboes){
+                    ofPushMatrix();{
+                        ofRotateXDeg(deg);
+                        deg += 30;
+                        ofTranslate(0,-0.5,0);
+                        geo_shader.setUniformTexture("image", f.getTexture(), 0);
+                        drawing_plane.draw();
+                    }ofPopMatrix();
+                }
+                for(auto &s:image_stacker.stkimgs){
+                    ofPushMatrix();{
+                        ofMultMatrix(eigen_glm(s.mat));
+                        ofDisableArbTex();
+                        geo_shader.setUniformTexture("image", s.fbo.getTexture(), 0);
+                        drawing_plane.draw();
+                    }ofPopMatrix();
+                }
+
+                geo_shader.setUniform1i("u_isLight", 1);
+                geo_shader.setUniform4f("color" , glm::vec4(0.5 ,0.5 ,0.5 ,1.0));
+                realsense_mesh.draw();
+                ofMesh m;
+                geo_shader.setUniform4f("color" , glm::vec4(1.0 ,0.0 ,0.0 ,1.0));
+                m = rectMesh(0,0,100,100,true);
+                setNormals(m);
+                m.draw();
+                ofPushMatrix();
+                ofTranslate(0,0, 250);
+                geo_shader.setUniform4f("color" , glm::vec4(0.5 ,0.5 ,0.5,1.0));
+             
+                for(int i = 0; i < objs.size(); i++){
+                    for(int j = 0; j < objs[i].mesh_.size(); j++){
+                        //geo_shader.setUniform4f("color" , glm::vec4(0.5 + j * 0.1 ,1.0 - j * 0.1 ,1.0 ,1.0));
+                        objs[i].mesh_[j].drawFaces();
+                    }
+                }
+             
+                ofPopMatrix();
+                geo_shader.setUniform4f("color" , glm::vec4(0.4 ,0.4 ,0.4 ,0.6));
+                //ofDrawGrid(10,10,false,true,false,false);
+                ofDrawGrid(10,10,false,false,false,true);
+                ofPushMatrix();
+                ofTranslate(0.1,0.1,0.1);
+                geo_shader.setUniform4f("color" , glm::vec4(1.0 ,0.0 ,0.0 ,1.0));
+                ofDrawLine(0,0,0,100,0,0);
+                geo_shader.setUniform4f("color" , glm::vec4(0.0 ,1.0 ,0.0 ,1.0));
+                ofDrawLine(0,0,0,0,100,0);
+                geo_shader.setUniform4f("color" , glm::vec4(0.0 ,0.0 ,1.0 ,1.0));
+                ofDrawLine(0,0,0,0,0,100);
+                ofPopMatrix();
+            }geo_shader.end();
+        }easycam.end();
+    }g_buffer.end();
+    // 3. lighting Pass--------------------------------------------
+    glDisable(GL_DEPTH_TEST);
+    phong_shader.begin();{
+        phong_shader.setUniformTexture("gPosition", g_buffer.getTexture(0), 0);
+        phong_shader.setUniformTexture("gNormal", g_buffer.getTexture(1), 1);
+        phong_shader.setUniformTexture("gAlbedo", g_buffer.getTexture(2), 2);
+        phong_shader.setUniform3f("u_lightPos", ofVec3f(20.0, 50.0, 30.0) * viewMatrix);
+        phong_shader.setUniform3f("viewPos", easycam.getPosition());
+        quad.draw();
+    }phong_shader.end();
+}gfbo.end();
+*/
