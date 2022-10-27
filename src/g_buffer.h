@@ -3,7 +3,7 @@
 #include <vector>
 #include "ofApp.h"
 #include "sheared_stracture.h"
-
+//https://qiita.com/y_UM4/items/7647fd9fc19e60ec5822
 class gbuffer{
 public:
     ofMatrix4x4 projection_matrix;
@@ -93,7 +93,7 @@ public:
                                 for(auto &mc : mesh_conatinar){
                                     geo_shader.setUniform1i("u_isLight", 0);
                                     if(mc.use_tecxture){
-                                        geo_shader.setUniformTexture("image", mc.fbo.getTexture(), 0);
+                                            geo_shader.setUniformTexture("image", mc.fbo.getTexture(), 0);
                                     }else{
                                         geo_shader.setUniform1i("u_isLight", 1);
                                         geo_shader.setUniform4f("color" , mc.color);
@@ -103,10 +103,11 @@ public:
                                         mc.mesh.draw();
                                     }ofPopMatrix();
                                 }
-                             
+                                
                                 //--- GRID
                                 geo_shader.setUniform1i("u_isLight", 1);
                                 geo_shader.setUniform4f("color" , glm::vec4(0.4 ,0.4 ,0.4 ,0.6));
+                            
                                 ofDrawGrid(10,10,false,false,false,true);
                                 //---AXIS
                                 ofPushMatrix();{
@@ -135,3 +136,9 @@ public:
         }fbo.end();
     }
 };
+//--endoscope
+//float camHeight = 540;
+//float camera_matirx_height = 427;
+//fov = 2.0 * atan( camHeight / 2.0 / camera_matirx_height ) / M_PI * 180;
+// screen height /2.0   :   fy    -> most important code
+//cam.setFov(fov);

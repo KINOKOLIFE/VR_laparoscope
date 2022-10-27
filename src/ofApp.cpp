@@ -10,12 +10,13 @@ vector<MeshConatiner> mesh_container_stack;
 //----
 float near = 10.0;
 float far = 3000.0;
-gbuffer geeBuffer;
+
 
 //--------------------------------------------------------------
 void ofApp::setup(){
+    //---realsense
+    real_sense.setup();
     //g-buffer
-    g_buf.setup(480, 270);
     geeBuffer.setup(480, 270);
     geeBuffer.set_camera_param(70);
     //-----
@@ -32,11 +33,11 @@ void ofApp::setup(){
     //--
     realsense_model.loadModel("realsense_model/t265.obj",true);
     realsense_model.setScaleNormalization(false);
-
     realsense_mesh = realsense_model.getMesh(0);;
     setNormals(realsense_mesh);
     //ofEnableSmoothing();
     ofDisableArbTex();
+    
     //---human interface device
     HID = new hid();
     ofAddListener(HID->dragging_button1, this, &ofApp::button_1_drag);
@@ -47,19 +48,13 @@ void ofApp::setup(){
     if(hid_setup){
         HID->startThread();
     }
-    //--gbuffer
-    //gbuffer_setup();
+    //-------------
     drawing_plane = rectMesh(0,0,100,100,true);
     setNormals(drawing_plane);
-    //--endoscope
-    //float camHeight = 540;
-    //float camera_matirx_height = 427;
-    //fov = 2.0 * atan( camHeight / 2.0 / camera_matirx_height ) / M_PI * 180;
-    // screen height /2.0   :   fy    -> most important code
-    //cam.setFov(fov);
+
    //--gizmo
     gizmocam.setControlArea(area2);
-    //--
+
     //-----generate saple sceen
     Eigen::Matrix4d M;
     M.setIdentity();
@@ -97,14 +92,17 @@ void ofApp::setup(){
 //--------------------------------------------------------------
 void ofApp::update(){
     UVCimage.setFromPixels(uvc_cap.pixels);
-    viewer.update(UVCimage);
+    glm::mat4 m_ = eigen_glm(real_sense.ultrasound);
+    viewer.update(UVCimage, m_);
  
     mygizmo.unable_easycam(easycam);
     drawTerrios(perspective, easycam);
+    /*
     ofMesh m;
     m = rectMesh(0,0,100,100,true);
     setNormals(m);
     mygizmo.update(gizmocam);
+    */
     
     glm::mat4 mvm_easycam;
     
@@ -114,29 +112,15 @@ void ofApp::update(){
             easycam.setNearClip(near);
             easycam.setFarClip(far);
             ofPushMatrix();{
-                
-                for(auto mp: mesh_container_stack){
-                
+                for(auto mp: viewer.stacks){
                     ofPushMatrix();
-                    ofMultMatrix(mp.matrix);
+                    ofMultMatrix(mp.mat);
                     mp.fbo.getTexture().bind();
                     mp.mesh.draw();
                     mp.fbo.getTexture().unbind();
                     ofPopMatrix();
                 }
-                
-                if(uvc_cap.setup){
-                    ofDisableArbTex();
-                    if(rs){
-                        ofDisableArbTex();
-                        ofPushMatrix();
-                            ofMultMatrix(eigen_glm(rs->ultrasound));
-                            UVCimage.getTexture().bind();
-                            m.draw();
-                            UVCimage.getTexture().unbind();
-                        ofPopMatrix();
-                    }
-                }
+                 
                 for(int i = 0; i < objs.size(); i++){
                     ofLight l;
                     l.enable();
@@ -150,26 +134,28 @@ void ofApp::update(){
         }easycam.end();
     }perspective.end();
 
-  
-    if(rs){
-        draw_model(perspective, easycam, realsense_model, rs->t265_rawoutput, ofColor(200));
-        draw_axis(perspective, easycam, rs->ultrasound);
-        draw_axis(perspective, easycam, rs->scope);
-        //fisheye_left_image.setFromPixels(rs->fisheye_left_cvimage.ptr(), 848, 800, OF_IMAGE_GRAYSCALE);
-        std::cout<<rs->colorimg.type()<<std::endl;
-        fisheye_left_image.setFromPixels(rs->colorimg.ptr(), 848, 800, OF_IMAGE_COLOR);
-        if(rs->tvecs_.size()>0){
-            //std::cout<<tst->tvecs_[0]<<std::endl;
+    fisheye_left_image.setFromPixels(real_sense.colorimg.ptr(), 848, 800, OF_IMAGE_COLOR);
+    
+    draw_model(perspective, easycam, realsense_model, real_sense.t265_rawoutput, ofColor(200));
+    draw_axis(perspective, easycam, real_sense.ultrasound);
+    //draw_axis(perspective, easycam, real_sense.scope);
+    if(real_sense.tvecs_.size()>0){
+        //std::cout<<tst->tvecs_[0]<<std::endl;
+    }
+
+    vector<MeshConatiner> container_stack;
+    for( auto ctn : viewer.stacks){
+        container_stack.push_back(MeshConatiner{ctn.mesh, ctn.mat, ctn.fbo, glm::vec4(0,0,0,0), true});
+    }
+    ofFbo ff;
+    for( auto &assyncs : objs){
+        for( auto &as : assyncs.mesh_){
+            container_stack.push_back(MeshConatiner{as, glm::mat4(1.0f), ff, glm::vec4(0,1,0,1), false});
         }
     }
-    if(rs){
-        g_buf.camera_mat << rs->scope;
-    }
-    glm::mat4 mvm = glm::inverse(mvm_easycam);
-    geeBuffer.update(mvm, mesh_container_stack);
-    //g_buf.update(easycam, endoscope_camera);
     
-   
+    glm::mat4 mvm = glm::inverse(mvm_easycam);
+    geeBuffer.update(mvm, container_stack);
 }
 
 //--------------------------------------------------------------
@@ -178,11 +164,9 @@ void ofApp::draw(){
     glDisable(GL_LIGHTING);
     fisheye_left_image.draw(480,0,424,400);
     perspective.draw(area2);
-    //g_buf.fbo.draw(480,400);
     geeBuffer.fbo.draw(480,400);
     viewer.fbo.draw(viewer.px,  viewer.py, viewer.width, viewer.height);
     //viewer.stacks[viewer.stacks.size() - 1].fbo.draw(0,0);
-    viewer.preview.draw(0,0);
     gui_draw();
 }
 //--------------------------------------------------------------
@@ -204,10 +188,7 @@ void ofApp::button_3_up(bool &b){
 //--------------------------------------------------------------
 void ofApp::exit(){
     uvc_cap.stopThread();
-    if(rs){
-        rs->stopThread();
-        delete rs;
-    }
+    real_sense.disconnect();
 }
 //--------------------------------------------------------------
 void ofApp::gui_draw(){
@@ -235,19 +216,6 @@ void ofApp::gui_draw(){
             if(ImGui::SliderFloat("RADIUS", &viewer.radius, 1.00f, 20.0f)){
                 viewer.change_radius();
             };
-            
-            //static float col1[3] = { 1.0f,0.0f,0.2f };
-            //ImGui::ColorEdit3("color 1", col1);
-     /*
-            if(ImGui::Checkbox(" fill ", &viewer._fill)){
-                viewer.togglec_fill();
-            };
-            ImGui::SameLine();
-            if(ImGui::Checkbox(" erase ", &viewer._erase)){
-                viewer.togglec_erase();
-            };
-      */
-            //ImGui::SameLine();
             if (ImGui::Button(" delete ")) {
                 viewer.delete_marker();
 
@@ -258,13 +226,7 @@ void ofApp::gui_draw(){
 
             }
             if (ImGui::Button(" capture! ")) {
-                if(rs){
-                    viewer.capture(UVCimage, rs->ultrasound);
-                    
-                }else{
-                Eigen::Matrix4d m;
-                    viewer.capture(UVCimage, m);
-                }
+                viewer.capture(UVCimage);
             }
             
             
@@ -278,11 +240,13 @@ void ofApp::gui_draw(){
             ImGui::SameLine();if (ImGui::Button(">")) {
                 viewer.forward_page();
             }
-            if (ImGui::Button("crop")) {
-                viewer.crop();
+            //ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, (ImVec4)ImColor(255,255,255,255));v
+            if(ImGui::SliderInt("page", &viewer.current_page, 0, viewer.stacks.size() -1)){
+                viewer.change_page();
+                
             }
             if(ImGui::SliderFloat("threshold", &viewer.threshold, 0.00f, 600.0f)){
-                viewer.crop();
+                viewer.update_threshold();
             }
             ImGui::Text(" gauge :");
             ImGui::SameLine();
@@ -293,19 +257,12 @@ void ofApp::gui_draw(){
             if (ImGui::Button(" save ")) {
                 
             }
-            /*
-            
-            ImTextureID textureID = ( ImTextureID )( uintptr_t )viewer.imgui_preview.getTexture().getTextureData().textureID ;
-            //auto size = ImGui::GetContentRegionAvail() ; // for example
-            ImGui::Image( textureID, ImVec2(viewer.imgui_preview.getWidth(),viewer.imgui_preview.getHeight()) ) ;
-            */
             ImTextureID textureID = ( ImTextureID )( uintptr_t )viewer.preview.getTexture().getTextureData().textureID ;
             //auto size = ImGui::GetContentRegionAvail() ; // for example
             ImGui::Image( textureID, ImVec2(viewer.preview.getWidth(),viewer.preview.getHeight()) ) ;
         }ImGui::End();
         ImGui::Begin("UVC source");{
             if(ImGui::IsWindowHovered()){
-            // GUI上にマウスがあるときにcropウインドウの操作をキャンセルさせるため
                 easycam.disableMouseInput();
             }else{
                 
@@ -335,32 +292,21 @@ void ofApp::gui_draw(){
             }
             ImGui::Text("Hello");
         }ImGui::End();
-        ImGui::Begin("real sense t265");{
+        ImGui::Begin("hello realsense");{
             if(ImGui::IsWindowHovered()){
-                //viewer.hover = true; // GUI上にマウスがあるときにcropウインドウの操作をキャンセルさせるため
+                //viewer.hover = true; //
                 easycam.disableMouseInput();
             }
-            if(rs == nullptr){
-                if (ImGui::Button(" connect ")) {
-                    rs = new rs265();
-                    rs->setup();
-                    if(rs->connect()){
-                        rs->startThread();
-                    }else{
-                        delete rs;
-                        rs = nullptr;
-                    }
-                }
+            if (ImGui::Button(" connect ")) {
+                if(real_sense.connect()){
+                    real_sense.startThread();
+                };
             }
-            if(rs){
-                ImGui::SliderFloat("process", &rs->iProcessCov, 0.00f, 200.0f);
-                ImGui::SliderFloat("measure", &rs->iMeasurementCov, 0.00f, 200.0f);
-                if (ImGui::Button(" kill ")) {
-                    rs->stopThread();
-                    delete rs;
-                    rs = nullptr;
-                }
+            if (ImGui::Button(" disconnect ")) {
+                real_sense.disconnect();
             }
+            ImGui::SliderFloat("process", &real_sense.iProcessCov, 0.00f, 200.0f);
+            ImGui::SliderFloat("measure", &real_sense.iMeasurementCov, 0.00f, 200.0f);
         }ImGui::End();
         ImGui::Begin("read CT model");{
             if(ImGui::IsWindowHovered()){
@@ -379,7 +325,6 @@ void ofApp::gui_draw(){
                     }
                 }
             }
-            //static float col2[3] = { 1.0f,0.0f,0.2f };
             
             for(int i; i < objs.size(); i++){
                 if(objs[i].show){
@@ -393,10 +338,6 @@ void ofApp::gui_draw(){
                 }
                 char* c = const_cast<char*>(objs[i].thum.c_str());
                 ImGui::SameLine();ImGui::Text(c);
-                
-                //static float col2[4] = { 0.4f,0.7f,0.0f,0.5f };
-                //ImGui::ColorEdit3("color", col2);
-                //ImGui::ColorEdit3("color", col3);
             }
             
         }ImGui::End();
@@ -405,14 +346,14 @@ void ofApp::gui_draw(){
                 //viewer.hover = true; // GUI上にマウスがあるときにcropウインドウの操作をキャンセルさせるため
                 easycam.disableMouseInput();
             }
-            if(rs){
-                if (ImGui::Button("on")) {
-                    g_buf.endoscope = true;
-                }
-                if (ImGui::Button("g-buffer")) {
-                    //easycamEnable = !easycamEnable;
-                }
+            
+            if (ImGui::Button("on")) {
+               // g_buf.endoscope = true;
             }
+            if (ImGui::Button("g-buffer")) {
+                //easycamEnable = !easycamEnable;
+            }
+           
             if(ImGui::SliderFloat("Float", &fov, 40.0f, 120.0f)){
                 easycam.setFov(fov);
             }
@@ -432,10 +373,6 @@ void ofApp::keyPressed(int key){
         viewer.delete_marker();
     }
     mygizmo.enable_gozmo(gizmocam);
-    if(uvc_cap.setup){
-        Eigen::Matrix4d m;
-        
-    }
 }
 
 //--------------------------------------------------------------

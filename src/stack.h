@@ -140,16 +140,25 @@ public:
     bool select;
     string fileName;
     ofImage image;
- 
-    ofFbo fbo;
-    Eigen::Matrix4d mat;
+
     //----------
     std::vector<object_> rectangle_;
     std::vector<object_> marker;
     std::vector<object_> gauge;
     
+    float threshold;
+    bool crop_flag;
+    
     float hue;
     float radius;
+    //-----
+    ofMesh mesh;
+    bool use_tecxture;
+    ofFbo fbo;
+    glm::mat4 mat;
+    glm::vec4 color;
+    
+    //-------
     stack(int _width, int _height):width(_width), height(_height){
         rectangle_.push_back(object_());
         rectangle_.push_back(object_());
@@ -238,6 +247,7 @@ public:
                     break;
             }
     }
+    
     void update(ofFbo &fbo){
         fbo.begin();{
             //ofClear(0,0);
@@ -285,21 +295,33 @@ public:
                 rectangle_[2].py = rectangle_[3].py;
                 rectangle_[0].px = rectangle_[3].px;
             }
+            
    
             ofSetColor(ofColor::fromHsb(200, 255, 255));
             ofDrawLine(rectangle_[0].px, rectangle_[0].py,  rectangle_[1].px, rectangle_[1].py);
             ofDrawLine(rectangle_[1].px, rectangle_[1].py,  rectangle_[2].px, rectangle_[2].py);
             ofDrawLine(rectangle_[2].px, rectangle_[2].py,  rectangle_[3].px, rectangle_[3].py);
             ofDrawLine(rectangle_[3].px, rectangle_[3].py,  rectangle_[3].px, rectangle_[1].py);
- 
+            crop_flag = false;
+            for(auto &a :rectangle_){
+                if(a.updated){
+                    crop_flag = true;
+                };
+            }
+            for(auto &a :gauge){
+                if(a.updated){
+                    crop_flag = true;
+                };
+            }
             for(auto &a :rectangle_){
                 a.draw();
                 a.updated = false;
             }
             for(auto &a :marker){
                 a.draw();
-                a.updated = false;
+                //a.updated = false;
             }
+            
         }fbo.end();
         
     }
@@ -375,7 +397,7 @@ public:
         pt[6] = rectangle_[2].py;
         j["pt"].push_back(pt);
     }
-    void crop(ofImage &img, float threshold){
+    void crop(ofImage &img){
         float crop_width_on_viewer = rectangle_[1].px - rectangle_[0].px;
         float crop_height_on_viewer = rectangle_[3].py - rectangle_[0].py;
         float mm_pixel = 10.0 / abs(gauge[1].py -  gauge[0].py );  // 10mm =  mm_pixel
@@ -405,7 +427,7 @@ public:
         for(int x = 0; x < pixels.getWidth(); x++ ){
             for(int y = 0; y < pixels.getHeight(); y++ ){
                 ofColor c = pixels.getColor(x,y);
-                if( c.r + c.g + c.b < threshold){
+                if( c.r + c.g + c.b < this->threshold){
                     ofColor c = ofColor(0,0,0,0);
                     pixels.setColor(x, y, c);
                 }
@@ -417,8 +439,10 @@ public:
         ofClear(0,0);
         i.draw(0,0);
         fbo.end();
+        this->mesh = rectMesh(0,0,mesh_real_space_width,mesh_real_space_height,true);
+        setNormals(this->mesh);
     }
-    void crop(ofImage &img){
+    void simple_crop(ofImage &img){
         float crop_width_on_viewer = rectangle_[1].px - rectangle_[0].px;
         float crop_height_on_viewer = rectangle_[3].py - rectangle_[0].py;
         float mm_pixel = 10.0 / abs(gauge[1].py -  gauge[0].py );  // 10mm =  mm_pixel
@@ -442,6 +466,8 @@ public:
         ofClear(0,0);
         f.draw(0,0, mesh_real_space_width, mesh_real_space_height);
         fbo.end();
+        this->mesh = rectMesh(0,0,mesh_real_space_width,mesh_real_space_height,true);
+        setNormals(this->mesh);
     }
 };
 //-------------------------------------------------//
@@ -461,13 +487,14 @@ class manager{
         return glm::vec2(X, Y);
     }
     
-    int current_page;
+    
     int snapCounter;
     
     //----
     ofJson js;
     
 public:
+    int current_page;
     vector<stack>stacks;
     float px, py;//表示位置
     float width, height; // 表示サイズ
@@ -478,12 +505,14 @@ public:
     ofImage captured;
     ofFbo fbo;
     ofFbo preview;
+    ofFbo live_preview;
     //float preview_offset_x, preview_offset_y;
     
  
     manager(){
         
     }
+
     void setup(float _x, float _y, float _w, float _h){
         px = _x;
         py = _y;
@@ -503,14 +532,30 @@ public:
         add_stack();
         change_page();
         noimage.load("chessboard1.jpg");
+  
+            ofRegisterMouseEvents(this); // this will enable our circle class to listen to the mouse events.
+           
+       
     }
+    void mouseMoved(ofMouseEventArgs & args){
+    }
+    void mouseDragged(ofMouseEventArgs & args){};
+    void mousePressed(ofMouseEventArgs & args){};
+    void mouseReleased(ofMouseEventArgs & args){};
+    void mouseScrolled(ofMouseEventArgs & args){};
+    void mouseEntered(ofMouseEventArgs & args){};
+    void mouseExited(ofMouseEventArgs & args){};
     
-    void capture(ofImage &image, Eigen::Matrix4d m){
+    void capture(ofImage &image){
         string fileName = "snapshot/snapshot_"+ofToString(snapCounter, 5, '0')+".png";
         if(image.save(fileName)){
             
             stacks.push_back( stacks[ stacks.size() - 1 ] );
+ 
             stacks[ stacks.size() - 2 ].fileName = fileName;
+            //stacks[ stacks.size() - 2 ].mat = mat;
+            stacks[ stacks.size() - 2 ].threshold = this->threshold;
+            stacks[ stacks.size() - 2 ].crop(image);
             snapCounter ++;
             current_page = stacks.size() - 1;
             cout<<current_page<<" "<<stacks.size()<<endl;
@@ -521,13 +566,14 @@ public:
     void change_page(){
         if(current_page != stacks.size() -1){
             captured.load(stacks[current_page].fileName);
-            this->crop();
+            this->threshold = stacks[current_page].threshold;
         }
     }
     
     void add_stack(){
         stack s(width, height);
         s.set_from_json(js);
+        //s.mat = glm::mat4(0);
         stacks.push_back(s);
         current_page = stacks.size() - 1;
         change_page();
@@ -566,49 +612,30 @@ public:
             stacks[current_page].mouse(vec.x, vec.y, button, function, hue_, radius);
         }
     }
-    /*
-    void update(){
-        if(current_page != stacks.size() -1){
-            fbo.begin();
-            ofClear(0,0);
-            captured.draw(0,0, width, height);
-            fbo.end();
-            ofDisableArbTex();
-            preview.allocate(stacks[current_page].fbo.getWidth(), stacks[current_page].fbo.getHeight());
-            preview.begin();
-            stacks[current_page].fbo.draw(0,0);
-            preview.end();
-        }else{
-            fbo.begin();
-            ofClear(0,0);
-            fbo.end();
-        }
-        stacks[current_page].update(fbo);
-        stacks[current_page].get_radius(radius);
-        stacks[current_page].get_hue(hue);
-    }
-    */
-    void update(ofImage &uvc_image){
+    void update(ofImage &uvc_image, glm::mat4 mat){
         if(current_page != stacks.size() -1){
             fbo.begin();
             ofClear(0,0);
             captured.draw(0,0, width, height);
             fbo.end();
             stacks[current_page].update(fbo);
-            
+            if( stacks[current_page].crop_flag ){
+                stacks[current_page].crop(captured);
+            }
         }else{
             fbo.begin();
             ofClear(0,0);
             uvc_image.draw(0,0, width, height);
             fbo.end();
             stacks[current_page].update(fbo);
-            stacks[current_page].crop(uvc_image);
+            stacks[current_page].simple_crop(uvc_image);
         }
-        
+        stacks[stacks.size() -1].mat = mat;
         stacks[current_page].get_radius(radius);
         stacks[current_page].get_hue(hue);
         //preview = stacks[stacks.size() -1].fbo;//本当に大丈夫！？？
         preview = stacks[current_page].fbo;
+        live_preview = stacks[stacks.size() - 1].fbo;
     }
     void change_radius(){
         stacks[current_page].change_radius(radius);
@@ -636,9 +663,14 @@ public:
     }
     void crop(){
         if(current_page != stacks.size() -1){
-            stacks[current_page].crop(captured, threshold);
+            stacks[current_page].crop(captured);
         }
     }
-
+    void update_threshold(){
+        if(current_page != stacks.size() -1){
+            stacks[current_page].threshold = this->threshold;
+            stacks[current_page].crop(captured);
+        }
+    }
 };
 };

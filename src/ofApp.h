@@ -12,7 +12,6 @@
 #include <Eigen/LU>
 
 #include "ofxImGui.h"
-//#include "ultrasound_viewer.h"
 #include "sheared_stracture.h"
 #include "uvc_capture.h"
 #include "graphics.h"
@@ -21,8 +20,6 @@
 #include "aruco_manager.h"
 #include "objLoader.h"
 #include "gizmo3d.h"
-//#include "image_stacker.h"
-#include "gBuff.h"
 #include "g_buffer.h"
 #include "stack.h"
 
@@ -58,13 +55,9 @@ class ofApp : public ofBaseApp{
     ofFbo perspective;
     ofEasyCam easycam;
     ofRectangle area2 = ofRectangle(0,400,424,400);
-    //realsense
-    rs265 *rs;
-    //rs265 realsense265;
-    
-    
-    
-    //---hidapi
+    //------realsense
+    rs265 real_sense;
+    //-------hidapi
     void button_1_drag(bool &b);
     void button_1_up(bool &b);
     void button_2_up(bool &b);
@@ -73,22 +66,16 @@ class ofApp : public ofBaseApp{
     bool hid_setup;
     //------endoscope
     float fov = 60.0f;
-    //testthread *tst;
+    ofCamera endoscope_camera;
     //------aruco
     aruco_manager aruco_manager_();
-    //------
+    //------mesh
     vector<objLoader> objs;
+    MeshConatiner mesh_container;
     //-------gizmo_camera
     ofEasyCam gizmocam;
     gizmo3d mygizmo;
-    //------image stack
-    //Image_stacker image_stacker;
-    //imageStack stk;
-    //--g-bffer
-    gbf g_buf;
-    ofCamera endoscope_camera;
-    
-    //--
-    MeshConatiner mesh_container;
+    //------g-bffer
+    gbuffer geeBuffer;
     
 };

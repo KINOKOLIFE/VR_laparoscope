@@ -24,7 +24,6 @@ public:
     float iMeasurementCov = 100;
     cv::Ptr<cv::aruco::Dictionary> dictionary;
     cv::Ptr<cv::aruco::DetectorParameters> parameters;
-    bool prepared;
     vector<int> markerIdL_;
     std::vector<cv::Vec3d> tvecs_;
     std::vector<cv::Vec3d> rvecs_;
@@ -64,6 +63,19 @@ public:
         0, 0, 1, 0,
 0, 0, 0, 1;
     }
+    bool disconnect(){
+        if(this->isThreadRunning()){
+            this->stopThread();
+        }
+        try{
+            p.stop();
+        }
+        catch(...)
+        {
+            std::cout<<"cannot disonnect "<<std::endl;
+        }
+        std::cout<<"t265 disconnect"<<std::endl;
+    }
     bool connect(){
         std::cout<<"t265 conneting....."<<std::endl;
         cfg.enable_stream(RS2_STREAM_POSE);
@@ -84,7 +96,6 @@ public:
                 return false;
             }
         std::cout<<"t265 connect establish"<<std::endl;
-        prepared = true;
         return true;
     }
     void threadedFunction() {
@@ -141,7 +152,8 @@ public:
             catch(...)
             {
                 std::cout<<"t265 hung up"<<std::endl;
-                this->stopThread();
+                this->disconnect();
+                //this->stopThread();
             }
         }
     }
