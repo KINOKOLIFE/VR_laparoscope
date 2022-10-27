@@ -117,6 +117,7 @@
 		D91100C1FBA245AD6CB55BD3 /* ofxImGui.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ofxImGui.h; path = ../../../addons/ofxImGui/src/ofxImGui.h; sourceTree = SOURCE_ROOT; };
 		E135C7F22D40FCFD9C5AB94B /* imgui.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = imgui.h; path = ../../../addons/ofxImGui/libs/imgui/src/imgui.h; sourceTree = SOURCE_ROOT; };
 		E237D4B329022C4C00234E6B /* image_stacker.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = image_stacker.h; sourceTree = "<group>"; };
+		E28DF05C29084D3C00E34835 /* g_buffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = g_buffer.h; sourceTree = "<group>"; };
 		E2BF109B28F25ADF0006E851 /* libhidapi.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libhidapi.dylib; path = ../../../../../../../usr/local/lib/libhidapi.dylib; sourceTree = "<group>"; };
 		E2BF109D28F25B270006E851 /* hid.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hid.h; sourceTree = "<group>"; };
 		E2BF10A028F30DF70006E851 /* aruco_manager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = aruco_manager.h; sourceTree = "<group>"; };
@@ -877,6 +878,7 @@
 				E2D0AD89290024AA00330EF4 /* gizmo3d.h */,
 				E237D4B329022C4C00234E6B /* image_stacker.h */,
 				E2D912A82904579B00482803 /* gBuff.h */,
+				E28DF05C29084D3C00E34835 /* g_buffer.h */,
 				E2D912A92905339400482803 /* stack.h */,
 			);
 			path = src;

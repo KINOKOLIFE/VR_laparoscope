@@ -23,6 +23,7 @@
 #include "gizmo3d.h"
 //#include "image_stacker.h"
 #include "gBuff.h"
+#include "g_buffer.h"
 #include "stack.h"
 
 class ofApp : public ofBaseApp{
@@ -59,16 +60,10 @@ class ofApp : public ofBaseApp{
     ofRectangle area2 = ofRectangle(0,400,424,400);
     //realsense
     rs265 *rs;
-    rs265 realsense265;
+    //rs265 realsense265;
     
-    //gbuffer
-    ofMesh quad; // 表示用板ポリ
-    ofFbo g_buffer;//https://qiita.com/y_UM4/items/7647fd9fc19e60ec5822 Deferred Rendering
-    ofMatrix4x4 projection_matrix;
-    ofShader geo_shader;
-    ofShader phong_shader;
-    ofFbo gfbo;
-    void gbuffer_setup();
+    
+    
     //---hidapi
     void button_1_drag(bool &b);
     void button_1_up(bool &b);
@@ -81,8 +76,9 @@ class ofApp : public ofBaseApp{
     //testthread *tst;
     //------aruco
     aruco_manager aruco_manager_();
+    //------
     vector<objLoader> objs;
-    //-------fake_camera
+    //-------gizmo_camera
     ofEasyCam gizmocam;
     gizmo3d mygizmo;
     //------image stack
@@ -93,5 +89,6 @@ class ofApp : public ofBaseApp{
     ofCamera endoscope_camera;
     
     //--
+    MeshConatiner mesh_container;
     
 };

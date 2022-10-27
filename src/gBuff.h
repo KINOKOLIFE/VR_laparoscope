@@ -3,6 +3,8 @@
 #include <vector>
 #include "ofApp.h"
 #include "sheared_stracture.h"
+//gbuffer
+//https://qiita.com/y_UM4/items/7647fd9fc19e60ec5822 Deferred Rendering
 class gbf{
 public:
     ofMatrix4x4 projection_matrix;
@@ -13,15 +15,40 @@ public:
     bool use_gbf;
     bool endoscope = false;
     Eigen::Matrix4d camera_mat;
+    ofFbo fbo;
+    //^^^^^
+    std::vector<ofFbo> fboes;
+    ofMesh drawing_plane;
+    //----
+    ofMatrix4x4 viewMatrix;
+    //---
     gbf(){
+        
+    }
+    void setup(float width, float height){
+        ofDisableArbTex();
+        for(int i = 0; i < 10; i++){
+            ofFbo f;
+            f.allocate(256,256);
+            f.begin();
+            ofClear(0,0);
+            for(int k = 0; k < 10; k++)
+            {
+                ofSetColor(ofRandom(0,255),ofRandom(0,255),ofRandom(0,255),ofRandom(200,255));
+                ofDrawCircle(ofRandom(0,255), ofRandom(0,255), 10);
+            }
+            f.end();
+            fboes.push_back(f);
+        }
+        fbo.allocate(width, height);
         //-------shader
         geo_shader.load("shader/geo_shader");
         phong_shader.load("shader/phong_shader");
         ofDisableArbTex();
         vector<GLint> formats = { GL_RGBA16F, GL_RGBA16F, GL_RGBA16F };
         ofFbo::Settings settings;
-        settings.width = 480;
-        settings.height = 270;
+        settings.width = width;
+        settings.height = height;
         settings.textureTarget = GL_TEXTURE_2D;
         settings.wrapModeHorizontal = GL_CLAMP_TO_EDGE;
         settings.wrapModeVertical = GL_CLAMP_TO_EDGE;
@@ -47,19 +74,29 @@ public:
         quad.addTexCoord(ofVec2f(0.0f, 0.0f));
         //---
         camera_mat.setIdentity();
-        
+        drawing_plane = rectMesh(0,0,100,100,true);
+        setNormals(drawing_plane);
     }
+    void set_view_matrix(float fov){
+        ofCamera c;
+        c.setFov(fov);
+        c.begin();
+        viewMatrix = ofGetCurrentViewMatrix();
+        cout<< viewMatrix << endl;
+        c.end();
+    }
+    
 
-    void update(ofFbo &gfbo, ofEasyCam &easycam, ofCamera &camera){
+    void update(ofEasyCam &easycam, ofCamera &camera){
         if(endoscope){
-            update(gfbo, camera);
+            this->update(camera);
             
         }else{
-            update(gfbo, easycam);
+            this->update(easycam);
         }
     }
-    void update(ofFbo &gfbo, ofEasyCam &easycam){
-        gfbo.begin();{
+    void update(ofEasyCam &easycam){
+        fbo.begin();{
             ofClear(0);
             glEnable(GL_DEPTH_TEST);
             //1. render geometry to G-Buffer-------------------------------
@@ -75,8 +112,18 @@ public:
                         geo_shader.setUniformMatrix4f("view", viewMatrix);
                         geo_shader.setUniformMatrix4f("projection", projection_matrix);
                         geo_shader.setUniform1i("u_isLight", 0);
-              
-       
+                        //--
+                        int deg = 0;
+                        for(auto &f:fboes){
+                            ofPushMatrix();{
+                                ofRotateXDeg(deg);
+                                deg += 30;
+                                ofTranslate(0,-0.5,0);
+                                geo_shader.setUniformTexture("image", f.getTexture(), 0);
+                                drawing_plane.draw();
+                            }ofPopMatrix();
+                        }
+                        //-------
                         geo_shader.setUniform1i("u_isLight", 1);
                         geo_shader.setUniform4f("color" , glm::vec4(0.5 ,0.5 ,0.5 ,1.0));
                         //realsense_mesh.draw();
@@ -116,10 +163,11 @@ public:
                 phong_shader.setUniform3f("viewPos", easycam.getPosition());
                 quad.draw();
             }phong_shader.end();
-        }gfbo.end();
+        }fbo.end();
     }
-    void update(ofFbo &gfbo, ofCamera &cam){
-        gfbo.begin();{
+    void update(ofCamera &cam){
+        
+        fbo.begin();{
             ofClear(0);
             glEnable(GL_DEPTH_TEST);
             //1. render geometry to G-Buffer-------------------------------
@@ -181,6 +229,6 @@ public:
                 phong_shader.setUniform3f("viewPos", cam.getPosition());
                 quad.draw();
             }phong_shader.end();
-        }gfbo.end();
+        }fbo.end();
     }
 };

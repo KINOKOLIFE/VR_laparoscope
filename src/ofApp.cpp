@@ -6,11 +6,18 @@ std::vector<ofFbo> fboes;
 ofMesh realsense_mesh;
 ofMesh drawing_plane;
 satackviewer::manager viewer;
+vector<MeshConatiner> mesh_container_stack;
 //----
-
+float near = 10.0;
+float far = 3000.0;
+gbuffer geeBuffer;
 
 //--------------------------------------------------------------
 void ofApp::setup(){
+    //g-buffer
+    g_buf.setup(480, 270);
+    geeBuffer.setup(480, 270);
+    geeBuffer.set_camera_param(70);
     //-----
     viewer.setup(0 ,0 ,480, 270);
     //------imGUI セットアップ
@@ -18,7 +25,7 @@ void ofApp::setup(){
     //--video capture
     uvc_cap.get_camera_list();
     //3d perspective
-    perspective.allocate(424, 400);
+    perspective.allocate(area2.getWidth(), area2.getHeight());
     easycam.setControlArea(area2);
     //--
     fisheye_left_image.allocate(848, 800, OF_IMAGE_GRAYSCALE);
@@ -41,7 +48,7 @@ void ofApp::setup(){
         HID->startThread();
     }
     //--gbuffer
-    gbuffer_setup();
+    //gbuffer_setup();
     drawing_plane = rectMesh(0,0,100,100,true);
     setNormals(drawing_plane);
     //--endoscope
@@ -52,6 +59,40 @@ void ofApp::setup(){
     //cam.setFov(fov);
    //--gizmo
     gizmocam.setControlArea(area2);
+    //--
+    //-----generate saple sceen
+    Eigen::Matrix4d M;
+    M.setIdentity();
+    for(int i = 0; i < 10; i++){
+        ofFbo f;
+        ofDisableArbTex();
+        f.allocate(256,256);
+        f.begin();
+        ofClear(0,0);
+        for(int k = 0; k < 10; k++)
+        {
+            ofSetColor(ofRandom(0,255),ofRandom(0,255),ofRandom(0,255),ofRandom(200,255));
+            ofDrawCircle(ofRandom(0,255), ofRandom(0,255), 10);
+        }
+        f.end();
+        
+        M = rotx( i * 30);
+        glm::mat4 MM = eigen_glm(M);
+        ofMesh msh;
+        msh = rectMesh(0,0,100,100,true);
+        setNormals(msh);
+        MeshConatiner mct = MeshConatiner{msh, MM, f, glm::vec4(0,0,0,0), true};
+        mesh_container_stack.push_back(mct);
+    }
+    /*
+    struct MeshConatiner{
+        ofMesh mesh;
+        glm::mat4 matrix;
+        ofFbo fbo;
+        glm::vec4 color;
+        bool use_tecxture;
+    };
+     */
 }
 //--------------------------------------------------------------
 void ofApp::update(){
@@ -64,9 +105,26 @@ void ofApp::update(){
     m = rectMesh(0,0,100,100,true);
     setNormals(m);
     mygizmo.update(gizmocam);
+    
+    glm::mat4 mvm_easycam;
+    
     perspective.begin();{
         easycam.begin();{
+            mvm_easycam = easycam.getModelViewMatrix();
+            easycam.setNearClip(near);
+            easycam.setFarClip(far);
             ofPushMatrix();{
+                
+                for(auto mp: mesh_container_stack){
+                
+                    ofPushMatrix();
+                    ofMultMatrix(mp.matrix);
+                    mp.fbo.getTexture().bind();
+                    mp.mesh.draw();
+                    mp.fbo.getTexture().unbind();
+                    ofPopMatrix();
+                }
+                
                 if(uvc_cap.setup){
                     ofDisableArbTex();
                     if(rs){
@@ -77,7 +135,6 @@ void ofApp::update(){
                             m.draw();
                             UVCimage.getTexture().unbind();
                         ofPopMatrix();
-                    
                     }
                 }
                 for(int i = 0; i < objs.size(); i++){
@@ -108,7 +165,9 @@ void ofApp::update(){
     if(rs){
         g_buf.camera_mat << rs->scope;
     }
-    g_buf.update(gfbo, easycam, endoscope_camera);
+    glm::mat4 mvm = glm::inverse(mvm_easycam);
+    geeBuffer.update(mvm, mesh_container_stack);
+    //g_buf.update(easycam, endoscope_camera);
     
    
 }
@@ -119,7 +178,8 @@ void ofApp::draw(){
     glDisable(GL_LIGHTING);
     fisheye_left_image.draw(480,0,424,400);
     perspective.draw(area2);
-    gfbo.draw(480,400);
+    //g_buf.fbo.draw(480,400);
+    geeBuffer.fbo.draw(480,400);
     viewer.fbo.draw(viewer.px,  viewer.py, viewer.width, viewer.height);
     //viewer.stacks[viewer.stacks.size() - 1].fbo.draw(0,0);
     viewer.preview.draw(0,0);
@@ -221,16 +281,16 @@ void ofApp::gui_draw(){
             if (ImGui::Button("crop")) {
                 viewer.crop();
             }
-            ImGui::SliderFloat("threshold", &viewer.threshold, 0.00f, 600.0f);
-
-            
-            ImGui::Text("gauge");
+            if(ImGui::SliderFloat("threshold", &viewer.threshold, 0.00f, 600.0f)){
+                viewer.crop();
+            }
+            ImGui::Text(" gauge :");
             ImGui::SameLine();
             if (ImGui::Button(" reset ")) {
                 
             }
             ImGui::SameLine();
-            if (ImGui::Button(" savet ")) {
+            if (ImGui::Button(" save ")) {
                 
             }
             /*
@@ -356,6 +416,12 @@ void ofApp::gui_draw(){
             if(ImGui::SliderFloat("Float", &fov, 40.0f, 120.0f)){
                 easycam.setFov(fov);
             }
+            if(ImGui::SliderFloat("Near", &near, 1.0f, 200.0f)){
+                easycam.setFov(fov);
+            }
+            if(ImGui::SliderFloat("far", &far, 500.0f, 5000.0f)){
+                easycam.setFov(fov);
+            }
         }ImGui::End();
     }gui.end();
 }
@@ -422,6 +488,7 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 
 }
 //--------------------------------------------------------------
+/*
 void ofApp::gbuffer_setup(){
     //-------shader
     geo_shader.load("shader/geo_shader");
@@ -473,7 +540,7 @@ void ofApp::gbuffer_setup(){
     quad.addTexCoord(ofVec2f(0.0f, 0.0f));
 }
 //-----------------------
-
+*/
 /*
 gfbo.begin();{
     ofClear(0);

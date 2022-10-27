@@ -1,5 +1,6 @@
 #pragma once
 #include "ofApp.h"
+#include "sheared_stracture.h"
 
 class objLoader{
 public:
@@ -30,9 +31,9 @@ public:
                 ofMesh m = model.getMesh(i);
                 for(size_t i = 0; i < m.getNumColors(); i++){
                     m.getColors()[i];// Use this to get the current color
-                    //m.setColor(i, ofFloatColor(255,0,255));// pass which ever ofFloatColor you want to.
+                    m.setColor(i, ofFloatColor(255,0,0));// pass which ever ofFloatColor you want to.
                 }
-                //setNormals(m);
+                setNormals(m);
                 mesh_.push_back(m);
             }
             set = true;

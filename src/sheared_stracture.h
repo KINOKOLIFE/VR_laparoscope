@@ -1,22 +1,10 @@
 #pragma once
 #include "ofApp.h"
-struct imageStack{
-    std::vector<glm::vec4> point;
-    int px;
-    int py;
-    int w;
-    int h;
-    
-    float gauge0;
-    float gauge1;
-    float gauge2;
-   
-    float mm_pixel; // mm/pixel
-    bool show;
-    bool select;
-    string fileName;
-    ofImage image;
- 
+
+struct MeshConatiner{
+    ofMesh mesh;
+    glm::mat4 matrix;
     ofFbo fbo;
-    Eigen::Matrix4d mat;
+    glm::vec4 color;
+    bool use_tecxture;
 };
