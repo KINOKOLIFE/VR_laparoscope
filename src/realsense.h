@@ -24,9 +24,10 @@ public:
     float iMeasurementCov = 100;
     cv::Ptr<cv::aruco::Dictionary> dictionary;
     cv::Ptr<cv::aruco::DetectorParameters> parameters;
-    vector<int> markerIdL_;
+    vector<int> markerIdsL_;
     std::vector<cv::Vec3d> tvecs_;
     std::vector<cv::Vec3d> rvecs_;
+    vector<vector<cv::Point2f>> markerCornersL_;
     Eigen::Matrix4d tanslate_ultrasound;
     Eigen::Matrix4d ultrasound;
     Eigen::Matrix4d tanslate_scope;
@@ -141,11 +142,11 @@ public:
                         for( int i = 0; i < markerIdsL.size(); i++){
                             cv::aruco::drawAxis(colorimg, intrinsic, distortion, rvecs[i], tvecs[i], 13);
                         }
-
-                        markerIdL_ = markerIdsL;
                     lock();
+                        markerIdsL_ = markerIdsL;       
                         tvecs_ = tvecs;
                         rvecs_ = rvecs;
+                        markerCornersL_ = markerCornersL;
                     unlock();
                 }
             }

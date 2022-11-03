@@ -2,14 +2,16 @@
 
 ofImage fisheye_left_image;
 ofxAssimpModelLoader realsense_model;
-std::vector<ofFbo> fboes;
+//std::vector<ofFbo> fboes;
 ofMesh realsense_mesh;
-ofMesh drawing_plane;
 satackviewer::manager viewer;
 vector<MeshConatiner> mesh_container_stack;
 //----
 float near = 10.0;
 float far = 3000.0;
+//------
+ObjManager obj_manager;
+
 
 
 //--------------------------------------------------------------
@@ -17,7 +19,7 @@ void ofApp::setup(){
     //---realsense
     real_sense.setup();
     //g-buffer
-    geeBuffer.setup(480, 270);
+    geeBuffer.setup(480, 400, 480, 270);
     geeBuffer.set_camera_param(70);
     //-----
     viewer.setup(0 ,0 ,480, 270);
@@ -48,62 +50,21 @@ void ofApp::setup(){
     if(hid_setup){
         HID->startThread();
     }
-    //-------------
-    drawing_plane = rectMesh(0,0,100,100,true);
-    setNormals(drawing_plane);
-
    //--gizmo
     gizmocam.setControlArea(area2);
-
-    //-----generate saple sceen
-    Eigen::Matrix4d M;
-    M.setIdentity();
-    for(int i = 0; i < 10; i++){
-        ofFbo f;
-        ofDisableArbTex();
-        f.allocate(256,256);
-        f.begin();
-        ofClear(0,0);
-        for(int k = 0; k < 10; k++)
-        {
-            ofSetColor(ofRandom(0,255),ofRandom(0,255),ofRandom(0,255),ofRandom(200,255));
-            ofDrawCircle(ofRandom(0,255), ofRandom(0,255), 10);
-        }
-        f.end();
-        
-        M = rotx( i * 30);
-        glm::mat4 MM = eigen_glm(M);
-        ofMesh msh;
-        msh = rectMesh(0,0,100,100,true);
-        setNormals(msh);
-        MeshConatiner mct = MeshConatiner{msh, MM, f, glm::vec4(0,0,0,0), true};
-        mesh_container_stack.push_back(mct);
-    }
-    /*
-    struct MeshConatiner{
-        ofMesh mesh;
-        glm::mat4 matrix;
-        ofFbo fbo;
-        glm::vec4 color;
-        bool use_tecxture;
-    };
-     */
+    
 }
 //--------------------------------------------------------------
 void ofApp::update(){
     UVCimage.setFromPixels(uvc_cap.pixels);
     glm::mat4 m_ = eigen_glm(real_sense.ultrasound);
     viewer.update(UVCimage, m_);
- 
+    //gizomo rotation model matrix
     mygizmo.unable_easycam(easycam);
-    drawTerrios(perspective, easycam);
-    /*
-    ofMesh m;
-    m = rectMesh(0,0,100,100,true);
-    setNormals(m);
     mygizmo.update(gizmocam);
-    */
     
+    drawTerrios(perspective, easycam);
+
     glm::mat4 mvm_easycam;
     
     perspective.begin();{
@@ -115,21 +76,29 @@ void ofApp::update(){
                 for(auto mp: viewer.stacks){
                     ofPushMatrix();
                     ofMultMatrix(mp.mat);
+                    cout<<mp.mat<<endl;
                     mp.fbo.getTexture().bind();
                     mp.mesh.draw();
                     mp.fbo.getTexture().unbind();
                     ofPopMatrix();
                 }
-                 
-                for(int i = 0; i < objs.size(); i++){
-                    ofLight l;
-                    l.enable();
-                    objs[i].model.setPosition(0, 0, 250);
-                    objs[i].model.drawFaces();
+                ofEnableSeparateSpecularLight();
+                ofLight light;
+                light.enable();
+                for(int i = 0; i < obj_manager.obj_models.size(); i++){
+                    if(obj_manager.obj_models[i].show){
+                        ofSetColor(ofColor::gray);
+                        //obj_manager.obj_models[i].model.drawWireframe();
+                        
+                        glPointSize(2);
+                        ofSetColor(ofColor::red);
+                        //obj_manager.obj_models[i].model.drawVertices();
+                        obj_manager.obj_models[i].model.drawFaces();
+                    }
                 }
                 ofMultMatrix(mygizmo.model);
-                ofTranslate(20, 20, -20);
-                ofDrawBox(40);
+                //ofTranslate(20, 20, -20);
+                //ofDrawBox(40);
             }ofPopMatrix();
         }easycam.end();
     }perspective.end();
@@ -142,20 +111,19 @@ void ofApp::update(){
     if(real_sense.tvecs_.size()>0){
         //std::cout<<tst->tvecs_[0]<<std::endl;
     }
-
+    arucoManager.update( real_sense.markerIdsL_, real_sense.tvecs_, real_sense.rvecs_, real_sense.markerCornersL_, real_sense.t265_rawoutput);
+    arucoManager.draw(perspective, easycam);
     vector<MeshConatiner> container_stack;
     for( auto ctn : viewer.stacks){
         container_stack.push_back(MeshConatiner{ctn.mesh, ctn.mat, ctn.fbo, glm::vec4(0,0,0,0), true});
     }
-    ofFbo ff;
-    for( auto &assyncs : objs){
-        for( auto &as : assyncs.mesh_){
-            container_stack.push_back(MeshConatiner{as, glm::mat4(1.0f), ff, glm::vec4(0,1,0,1), false});
-        }
-    }
     
     glm::mat4 mvm = glm::inverse(mvm_easycam);
+    
     geeBuffer.update(mvm, container_stack);
+    
+    geeBuffer.pick(mouseX, mouseY, mvm);
+    
 }
 
 //--------------------------------------------------------------
@@ -307,40 +275,71 @@ void ofApp::gui_draw(){
             }
             ImGui::SliderFloat("process", &real_sense.iProcessCov, 0.00f, 200.0f);
             ImGui::SliderFloat("measure", &real_sense.iMeasurementCov, 0.00f, 200.0f);
+            if (ImGui::Button(" CAPTURE ")) {
+                
+            }
+            if (ImGui::Button(" STOP CAPTURE ")) {
+                
+            }
+            if (ImGui::Button(" ADJUST ")) {
+                
+            }
+            if (ImGui::Button(" STOP ADJUST ")) {
+                
+            }
         }ImGui::End();
         ImGui::Begin("read CT model");{
             if(ImGui::IsWindowHovered()){
                 //viewer.hover = true;
                 easycam.disableMouseInput();
             }
+            
             if (ImGui::Button(" open obj file ")) {
                 ofFileDialogResult result = ofSystemLoadDialog("Load file");
                 if(result.bSuccess) {
          
                     string path = result.getPath();
-                    ofxAssimpModelLoader model_segmentaion;
+                    //ofxAssimpModelLoader model_segmentaion;
                     objLoader o = objLoader(path);
                     if(o.set){
-                        objs.push_back(o);
+                        obj_manager.obj_models.push_back(o);
+                    }
+                    glm::mat4 E(1.0f);
+                    glm::vec4 color_= glm::vec4( 1.0, 0.0, 0.0 , 1.0);
+                    for( auto ml : o.mesh_){
+                       geeBuffer.container_manager.add_mesh(ml, o.thum);
                     }
                 }
             }
-            
-            for(int i; i < objs.size(); i++){
-                if(objs[i].show){
+            if(obj_manager.available()){
+                if(obj_manager.show()){
                     if (ImGui::Button(" hide ")) {
-                        objs[i].show = false;
+                        obj_manager.flip_show();
                     }
                 }else{
                     if (ImGui::Button(" show ")) {
-                        objs[i].show = true;
+                        obj_manager.flip_show();
                     }
                 }
-                char* c = const_cast<char*>(objs[i].thum.c_str());
+                string c_ = obj_manager.getPath();
+                char* c = const_cast<char*>(c_.c_str());
+                
                 ImGui::SameLine();ImGui::Text(c);
+                
+                if (ImGui::Button("<")) {
+                    obj_manager.backward_page();
+                }
+                ImGui::SameLine();if (ImGui::Button(">")) {
+                    obj_manager.forward_page();
+                }
+                ImGui::SameLine();if (ImGui::Button(" delete obj ")) {
+                    obj_manager.delete_obj();
+                }
             }
             
+            
         }ImGui::End();
+       
         ImGui::Begin("endoscope");{
             if(ImGui::IsWindowHovered()){
                 //viewer.hover = true; // GUI上にマウスがあるときにcropウインドウの操作をキャンセルさせるため
@@ -364,7 +363,70 @@ void ofApp::gui_draw(){
                 easycam.setFov(fov);
             }
         }ImGui::End();
+        ImGui::Begin("mesh profile");{
+            if(ImGui::IsWindowHovered()){
+                //viewer.hover = true;
+                easycam.disableMouseInput();
+            }
+            if(geeBuffer.container_manager.available()){
+                ImGui::Text("group : ");
+                ImGui::SameLine();string c1_ = geeBuffer.container_manager.getParent();
+                char* c1 = const_cast<char*>(c1_.c_str());
+                
+                ImGui::Text(c1);
+                
+                string c2_ = to_string(geeBuffer.container_manager.current_page);
+                char* c2 = const_cast<char*>(c2_.c_str());
+                ImGui::SameLine();ImGui::Text(c2);
+                ImGui::SameLine();
+                if(geeBuffer.container_manager.show()){
+                    if (ImGui::Button(" hide ")) {
+                        geeBuffer.container_manager.flip_show();
+                    }
+                }else{
+                        if (ImGui::Button(" show ")) {
+                            geeBuffer.container_manager.flip_show();
+                        }
+                }
+                
+                static char buf1[256] = "";//http://www.sanko-shoko.net/note.php?id=qlv3
+                if (ImGui::InputText("name", buf1, 256)) {
+                   
+                }
+  
+           
+                if(ImGui::Checkbox(" pick target ", &geeBuffer.container_manager.enable_picker)){
+                    geeBuffer.container_manager.enable_pick();
+                }
+                if(ImGui::SliderInt("PORT ID", &geeBuffer.port_id, 0, 2)){
+                    
+                };
+            
+                if(ImGui::ColorEdit3("color", geeBuffer.container_manager.col1)){
+                    geeBuffer.container_manager.change_color();
+                }
+                /*
+                if(ImGui::SliderFloat("HUE2", &geeBuffer.container_manager.hue, 0.0f, 1.0f)){
+                    geeBuffer.container_manager.change_color();
+                };
+                 */
+                if (ImGui::Button(" apply group ")) {
+                    geeBuffer.container_manager.change_color_group();
+                }
+                if (ImGui::Button("<")) {
+                    geeBuffer.container_manager.backward_page();
+                }
+                ImGui::SameLine();if (ImGui::Button(">")) {
+                    geeBuffer.container_manager.forward_page();
+                }
+                ImGui::SameLine();if (ImGui::Button(" delete mesh ")) {
+                    //obj_manager.delete_obj();
+                }
+                
+            }
+        }ImGui::End();
     }gui.end();
+ 
 }
 
 //--------------------------------------------------------------
@@ -561,4 +623,35 @@ gfbo.begin();{
         quad.draw();
     }phong_shader.end();
 }gfbo.end();
+*/
+/*
+ofMesh m;
+m = rectMesh(0,0,100,100,true);
+setNormals(m);
+
+/*
+//-----generate saple sceen
+Eigen::Matrix4d M;
+M.setIdentity();
+for(int i = 0; i < 10; i++){
+    ofFbo f;
+    ofDisableArbTex();
+    f.allocate(256,256);
+    f.begin();
+    ofClear(0,0);
+    for(int k = 0; k < 10; k++)
+    {
+        ofSetColor(ofRandom(0,255),ofRandom(0,255),ofRandom(0,255),ofRandom(200,255));
+        ofDrawCircle(ofRandom(0,255), ofRandom(0,255), 10);
+    }
+    f.end();
+    
+    M = rotx( i * 30);
+    glm::mat4 MM = eigen_glm(M);
+    ofMesh msh;
+    msh = rectMesh(0,0,100,100,true);
+    setNormals(msh);
+    MeshConatiner mct = MeshConatiner{msh, MM, f, glm::vec4(0,0,0,0), true};
+    mesh_container_stack.push_back(mct);
+}
 */

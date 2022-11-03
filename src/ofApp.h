@@ -77,5 +77,7 @@ class ofApp : public ofBaseApp{
     gizmo3d mygizmo;
     //------g-bffer
     gbuffer geeBuffer;
+    //---
+    aruco_manager arucoManager;
     
 };

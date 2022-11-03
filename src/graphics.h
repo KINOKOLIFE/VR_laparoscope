@@ -128,13 +128,15 @@ static void drawTerrios(ofFbo &fbo,ofEasyCam &cam){
     ofEnableAlphaBlending();
     ofEnableBlendMode(OF_BLENDMODE_ALPHA);
     ofEnableDepthTest();
-
+    
+    
     fbo.begin();
         ofClear(0);
     ofBackground(50);
         cam.begin();
             ofDrawGrid(10,10,true,false,false,true);
             ofDrawAxis(10);
+           
         cam.end();
     fbo.end();
 };

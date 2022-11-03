@@ -405,9 +405,21 @@ public:
         float crop_hight = crop_height_on_viewer / height *  img.getHeight();
         float crop_px = rectangle_[0].px / width *  img.getWidth();
         float crop_py = rectangle_[0].py / height *  img.getHeight();
-        float mesh_real_space_width = crop_width * mm_pixel;
-        float mesh_real_space_height = crop_hight * mm_pixel;
-        
+        //float mesh_real_space_width = crop_width * mm_pixel;
+        //float mesh_real_space_height = crop_hight * mm_pixel;
+        float mesh_real_space_width = crop_width_on_viewer * mm_pixel;
+        float mesh_real_space_height = crop_height_on_viewer * mm_pixel;
+        float zero_y = min(gauge[0].py ,  gauge[1].py);
+        float mesh_real_space_px = ( rectangle_[0].px - gauge[2].px ) * mm_pixel;
+        float mesh_real_space_py = ( rectangle_[0].py - zero_y ) * mm_pixel;
+        //cout<< mesh_real_space_width <<" "<<  crop_width_on_viewer * mm_pixel <<endl;
+        this->mat[3][0] = 0;
+        this->mat[3][1] = 0;
+        this->mat[3][2] = 0;
+        glm::vec4 src = this->mat * glm::vec4(mesh_real_space_px, mesh_real_space_py, 0.0, 1.0);
+        this->mat[3][0] = src.x;
+        this->mat[3][1] = src.y;
+        this->mat[3][2] = src.z;;
         ofFbo f;
         ofDisableArbTex();
         f.allocate(crop_width,crop_hight);
@@ -450,9 +462,20 @@ public:
         float crop_hight = crop_height_on_viewer / height *  img.getHeight();
         float crop_px = rectangle_[0].px / width *  img.getWidth();
         float crop_py = rectangle_[0].py / height *  img.getHeight();
-        float mesh_real_space_width = crop_width * mm_pixel;
-        float mesh_real_space_height = crop_hight * mm_pixel;
-        
+        //float mesh_real_space_width = crop_width * mm_pixel;
+        //float mesh_real_space_height = crop_hight * mm_pixel;
+        float mesh_real_space_width = crop_width_on_viewer * mm_pixel;
+        float mesh_real_space_height = crop_height_on_viewer * mm_pixel;
+        float zero_y = min(gauge[0].py ,  gauge[1].py);
+        float mesh_real_space_px = ( rectangle_[0].px - gauge[2].px ) * mm_pixel;
+        float mesh_real_space_py = ( rectangle_[0].py - zero_y ) * mm_pixel;
+        this->mat[3][0] = 0;
+        this->mat[3][1] = 0;
+        this->mat[3][2] = 0;
+        glm::vec4 src = this->mat * glm::vec4(mesh_real_space_px, mesh_real_space_py, 0.0, 1.0);
+        this->mat[3][0] = src.x;
+        this->mat[3][1] = src.y;
+        this->mat[3][2] = src.z;;
         ofFbo f;
         ofDisableArbTex();
         f.allocate(crop_width,crop_hight);
@@ -558,7 +581,7 @@ public:
             stacks[ stacks.size() - 2 ].crop(image);
             snapCounter ++;
             current_page = stacks.size() - 1;
-            cout<<current_page<<" "<<stacks.size()<<endl;
+           
         }else{
             std::cout<<"err"<<std::endl;
         };
@@ -583,7 +606,7 @@ public:
             stacks.erase(stacks.begin() + current_page, stacks.begin() + current_page + 1);
             current_page --;
             if( current_page < 0){
-                current_page = 1;
+                current_page = 0;//-------------本当は1が正しいかも知れない！
             }
         }
         change_page();
@@ -594,7 +617,7 @@ public:
             current_page = stacks.size() - 1;
         }
         change_page();
-        cout<<current_page<<" "<<stacks.size()<<endl;
+       
     }
     void backward_page(){
         current_page --;
@@ -602,7 +625,6 @@ public:
             current_page = 0;
         }
         change_page();
-        cout<<current_page<<" "<<stacks.size()<<endl;
     }
     void mouse(int x, int y, int button, int function){
         if(inner(x,y)){
@@ -630,7 +652,7 @@ public:
             stacks[current_page].update(fbo);
             stacks[current_page].simple_crop(uvc_image);
         }
-        stacks[stacks.size() -1].mat = mat;
+        //stacks[stacks.size() -1].mat = mat;//^^^^^^必要かも！！
         stacks[current_page].get_radius(radius);
         stacks[current_page].get_hue(hue);
         //preview = stacks[stacks.size() -1].fbo;//本当に大丈夫！？？

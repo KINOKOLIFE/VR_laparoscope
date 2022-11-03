@@ -23,6 +23,7 @@ public:
         if(this->enable){
             delta = glm::inverse(fake_camera_previous) * gizmo_camera.getModelViewMatrix();
             model = model_previous * delta;
+            
         }
         gizmo_camera.end();
     }

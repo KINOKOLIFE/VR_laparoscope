@@ -23,6 +23,7 @@
 		C2114978C2A333BA9867109F /* DefaultTheme.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A9A7E144D697FCBB4216A73E /* DefaultTheme.cpp */; };
 		DBBE189ECD171A97DCF46C6A /* BaseEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D7C7BDAD29F580A47FF56B52 /* BaseEngine.cpp */; };
 		E2BF109C28F25ADF0006E851 /* libhidapi.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E2BF109B28F25ADF0006E851 /* libhidapi.dylib */; };
+		E2EA77952912CF4700232E68 /* libopencv_calib3d.4.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E2EA77942912CF4700232E68 /* libopencv_calib3d.4.5.dylib */; };
 		E2FE08A928EFF3FF00B29ADE /* librealsense2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E2FE08A828EFF3FF00B29ADE /* librealsense2.dylib */; };
 		E2FE08AB28EFF41500B29ADE /* libceres.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E2FE08AA28EFF41500B29ADE /* libceres.dylib */; };
 		E2FE08AD28EFF42600B29ADE /* libgflags.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E2FE08AC28EFF42600B29ADE /* libgflags.dylib */; };
@@ -125,6 +126,8 @@
 		E2CF094128EEF6EB0041FE7D /* uvc_capture.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = uvc_capture.h; sourceTree = "<group>"; };
 		E2D0AD89290024AA00330EF4 /* gizmo3d.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gizmo3d.h; sourceTree = "<group>"; };
 		E2D912A92905339400482803 /* stack.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stack.h; sourceTree = "<group>"; };
+		E2EA77922912CF2500232E68 /* libopencv_ccalib.4.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_ccalib.4.5.dylib; path = ../../../../../../../usr/local/Cellar/opencv/4.5.4/lib/libopencv_ccalib.4.5.dylib; sourceTree = "<group>"; };
+		E2EA77942912CF4700232E68 /* libopencv_calib3d.4.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_calib3d.4.5.dylib; path = ../../../../../../../usr/local/Cellar/opencv/4.5.4/lib/libopencv_calib3d.4.5.dylib; sourceTree = "<group>"; };
 		E2FE08A628EFF16900B29ADE /* graphics.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = graphics.h; sourceTree = "<group>"; };
 		E2FE08A828EFF3FF00B29ADE /* librealsense2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = librealsense2.dylib; path = ../../../../../librealsense/build/librealsense2.dylib; sourceTree = "<group>"; };
 		E2FE08AA28EFF41500B29ADE /* libceres.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libceres.dylib; path = "../../../../../../../usr/local/Cellar/ceres-solver/2.0.0_4/lib/libceres.dylib"; sourceTree = "<group>"; };
@@ -341,6 +344,7 @@
 				E2FE08AF28EFF43900B29ADE /* libglog.dylib in Frameworks */,
 				E2FE08B328EFF45700B29ADE /* libopencv_core.4.5.dylib in Frameworks */,
 				E2FE08C228F167E900B29ADE /* libopencv_imgproc.dylib in Frameworks */,
+				E2EA77952912CF4700232E68 /* libopencv_calib3d.4.5.dylib in Frameworks */,
 				E2FE08B128EFF44A00B29ADE /* libopencv_aruco.dylib in Frameworks */,
 				E2BF109C28F25ADF0006E851 /* libhidapi.dylib in Frameworks */,
 			);
@@ -548,6 +552,8 @@
 		E2FE08A728EFF3FF00B29ADE /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				E2EA77942912CF4700232E68 /* libopencv_calib3d.4.5.dylib */,
+				E2EA77922912CF2500232E68 /* libopencv_ccalib.4.5.dylib */,
 				E2BF109B28F25ADF0006E851 /* libhidapi.dylib */,
 				E2FE08C128F167E900B29ADE /* libopencv_imgproc.dylib */,
 				E2FE08B228EFF45700B29ADE /* libopencv_core.4.5.dylib */,

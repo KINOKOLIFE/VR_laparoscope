@@ -10,8 +10,9 @@ public:
     string path;
     ofxAssimpModelLoader model;
     bool set;
-    bool show = false;
+    bool show = true;
     string thum;
+    bool target;
     void setup(string imagePath){
         this->path = imagePath;
     }
@@ -26,12 +27,12 @@ public:
             meshCount = model.getMeshCount();
             //mesh = model.getMesh(3);
             //setNormals(mesh);
-            std::cout<<meshCount<<std::endl;
+            //std::cout<<meshCount<<std::endl;
             for(int i = 0; i < meshCount; i++){
                 ofMesh m = model.getMesh(i);
                 for(size_t i = 0; i < m.getNumColors(); i++){
                     m.getColors()[i];// Use this to get the current color
-                    m.setColor(i, ofFloatColor(255,0,0));// pass which ever ofFloatColor you want to.
+                    //m.setColor(i, ofFloatColor(255,0,0));// pass which ever ofFloatColor you want to.
                 }
                 setNormals(m);
                 mesh_.push_back(m);
@@ -97,4 +98,65 @@ public:
         return elems;
     }
 
+};
+class ObjManager{
+public:
+    vector<objLoader> obj_models;
+    int current_page;
+    string path;
+
+    ObjManager(){
+        
+    }
+    void delete_obj(){
+        if(obj_models.size() > 0){
+            obj_models.erase(obj_models.begin() + current_page, obj_models.begin() + current_page + 1);
+            current_page --;
+            if( current_page < 0){
+                current_page = 0;
+            }
+        }
+    }
+    bool available(){
+        if(obj_models.size()>0){
+            return true;
+        }else{
+            return false;
+        }
+    }
+    string getPath(){
+        if(obj_models.size() > 0){
+            return obj_models[current_page].thum;
+        }else{
+            return string("");
+        }
+    }
+    void forward_page(){
+        current_page ++;
+        if( current_page > obj_models.size() - 1){
+            current_page = obj_models.size() - 1;
+        }
+    }
+    void backward_page(){
+        current_page --;
+        if( current_page < 0){
+            current_page = 0;
+        }
+        
+    }
+    void flip_show(){
+        if(obj_models.size() > 0){
+            obj_models[current_page].show = !obj_models[current_page].show;
+        }
+    }
+    bool show(){
+        if(obj_models.size()>0){
+            if(obj_models[current_page].show){
+            return true;
+            }else{
+                return false;
+            }
+        }else
+            return false;
+    }
 };
