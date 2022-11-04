@@ -1,6 +1,6 @@
 #pragma once
 #include "ofApp.h"
-#include "sheared_stracture.h"
+#include "sheared.h"
 
 class objLoader{
 public:

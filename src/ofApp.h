@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
+#include "controller.h"
 #include "ofxAssimpModelLoader.h"
 
 #include <opencv2/opencv.hpp>
@@ -12,16 +13,18 @@
 #include <Eigen/LU>
 
 #include "ofxImGui.h"
-#include "sheared_stracture.h"
+#include "sheared.h"
 #include "uvc_capture.h"
 #include "graphics.h"
 #include "realsense.h"
 #include "hid.h"
 #include "aruco_manager.h"
+#include "mesh_holder.h"
 #include "objLoader.h"
 #include "gizmo3d.h"
 #include "g_buffer.h"
 #include "stack.h"
+#include "picker.h"
 
 class ofApp : public ofBaseApp{
 
@@ -72,6 +75,7 @@ class ofApp : public ofBaseApp{
     //------mesh
     vector<objLoader> objs;
     MeshConatiner mesh_container;
+    meshController mesh_controller;
     //-------gizmo_camera
     ofEasyCam gizmocam;
     gizmo3d mygizmo;

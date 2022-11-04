@@ -2,14 +2,14 @@
 #include <iostream>
 #include <vector>
 #include "ofApp.h"
-#include "sheared_stracture.h"
+#include "sheared.h"
 namespace satackviewer
 
 {
 class object_{
     public:
     float px,py;
-    int hue;
+    float hue;
     bool selected;
     float radius;
     bool focus;
@@ -20,11 +20,11 @@ class object_{
     int type;
  
     object_() = default;//https://www.delftstack.com/ja/howto/cpp/array-of-objects-in-cpp/
-    object_(float _x, float _y, int _hue, float _radius):px(_x), py(_y), hue(_hue), radius(_radius){
+    object_(float _x, float _y, float _hue, float _radius):px(_x), py(_y), hue(_hue), radius(_radius){
         type = 0;
         selected = true;
     }
-    object_(float _x, float _y, int _hue, float _radius, int _type):px(_x), py(_y), hue(_hue), radius(_radius), type(_type){
+    object_(float _x, float _y, float _hue, float _radius, int _type):px(_x), py(_y), hue(_hue), radius(_radius), type(_type){
         selected = true;
     }
     virtual ~object_() = default;
@@ -96,9 +96,9 @@ class object_{
         return check;
     }
     virtual void draw(){
-            ofSetColor(ofColor::fromHsb(hue, 255, 255));
+            ofSetColor(ofColor::fromHsb(hue * 255, 255, 255));
         if(focus){
-            ofSetColor(ofColor::fromHsb(hue, 255, 100));
+            ofSetColor(ofColor::fromHsb(hue * 255, 255, 100));
         }
         
             ofDrawCircle(px, py, radius);
@@ -114,24 +114,23 @@ class object_{
         px = width - 10;
         ofSetColor(100);
         ofDrawLine(0, py, width,py);
-        ofSetColor(ofColor::fromHsb(hue, 255, 255));//Hue,Saturation,Brightness
+        ofSetColor(ofColor::fromHsb(120, 255, 255));//Hue,Saturation,Brightness
         ofDrawCircle(px, py, radius);
     }
     virtual void draw_vertical_line(int height){
         py = 10;
         ofSetColor(100);
         ofDrawLine(px, 0, px, height);
-        ofSetColor(ofColor::fromHsb(hue, 255, 255));//Hue,Saturation,Brightness
+        ofSetColor(ofColor::fromHsb(120, 255, 255));//Hue,Saturation,Brightness
         ofDrawCircle(px, py, radius);
     }
     virtual void draw(int width, int height){
     }
-    void set_param(float _x, float _y, int _hue, float _radius){
+    void set_param(float _x, float _y, float _hue, float _radius){
         px = _x; py = _y; hue = _hue; radius = _radius;
     }
 };
-
-
+//-----------------------------------------------------------
 class stack{
 public:
     int width, height;
@@ -164,90 +163,91 @@ public:
         rectangle_.push_back(object_());
         rectangle_.push_back(object_());
         rectangle_.push_back(object_());
-        gauge.push_back(object_(width - 20, 20, 40,  6));
-        gauge.push_back(object_(width - 20, 60, 40,  6));
-        gauge.push_back(object_(width / 2.0,10, 100, 6));
+        gauge.push_back(object_(width - 20, 20, 40.0/255.0,  6));
+        gauge.push_back(object_(width - 20, 60, 40.0/255.0,  6));
+        gauge.push_back(object_(width / 2.0,10, 100.0/255.0, 6));
         reset_gauge();
     }
     stack(){
         
     }
-    void mouse(int x, int y, int button, int function, float _hue, float _radius){
-            switch (function) {
-                case 0://mouseMove
-                    for(auto &g :gauge){
-                        g.focus = false;
-                        g.mouse_move(x,y);
-                    }
-                    for(auto &a :rectangle_){
-                        a.focus = false;
-                        a.mouse_move(x,y);
-                    }
-                    for(auto &p :marker){
-                        p.focus = false;
-                        p.mouse_move(x,y);
-                    }
-                    break;
-                case 2://mouse_press
-                    if(button == 0){
-                        for(auto &g :gauge){
-                            g.selected = false;
-                            g.mouse_press(x,y);
-                        }
-                        for(auto &a :rectangle_){
-                            a.selected = false;
-                            a.mouse_press(x,y);
-                        }
-                        for(auto &p :marker){
-                            p.selected = false;
-                            p.mouse_press(x,y);
-                        }
-                    }
-                    break;
-                case 3://mouse_releas
-                    if(button == 2){
-                        for(auto &g :gauge){
-                            g.selected = false;
-                        }
-                        for(auto &a :rectangle_){
-                            a.selected = false;
-                        }
-                        for(auto &p :marker){
-                            p.selected = false;
-                        }
-                       
-                        marker.push_back(object_(x, y, _hue, _radius));
-                      
-                    }else if(button == 0) {
-                        for(auto &g :gauge){
-                            g.mouse_release();
-                        }
-                        for(auto &a :rectangle_){
-                            a.mouse_release();
-                        }
-                        for(auto &p :marker){
-                            p.mouse_release();
-                        }
-                    }
-                    break;
-                case 1://mouse_drag
-                    if(button == 0){
-                        for(auto &g :gauge){
-                            g.mouse_drag(x,y);
-                        }
-                        for(auto &a :rectangle_){
-                            a.mouse_drag(x,y);
-                        }
-                        for(auto &p :marker){
-                            p.mouse_drag(x,y);
-                        }
-                    }
-                    break;
-                default:
-                    break;
-            }
+//---------------mouse call back section-------------------------------------
+    void mouseMoved(int x, int y, int button){
+        for(auto &g :gauge){
+            g.focus = false;
+            g.mouse_move(x,y);
+        }
+        for(auto &a :rectangle_){
+            a.focus = false;
+            a.mouse_move(x,y);
+        }
+        for(auto &p :marker){
+            p.focus = false;
+            p.mouse_move(x,y);
+        }
     }
-    
+    void mouseDraged(int x, int y, int button){
+        if(button == 0){
+            for(auto &g :gauge){
+                g.mouse_drag(x,y);
+            }
+            for(auto &a :rectangle_){
+                a.mouse_drag(x,y);
+            }
+            for(auto &p :marker){
+                p.mouse_drag(x,y);
+            }
+        }
+    }
+    void mousePressed(int x, int y, int button){
+        if(button == 0){
+            for(auto &g :gauge){
+                g.selected = false;
+                g.mouse_press(x,y);
+            }
+            for(auto &a :rectangle_){
+                a.selected = false;
+                a.mouse_press(x,y);
+            }
+            for(auto &p :marker){
+                p.selected = false;
+                p.mouse_press(x,y);
+            }
+        }
+    }
+    void mouseReleased(int x, int y, int button){
+        if(button == 2){
+            for(auto &g :gauge){
+                g.selected = false;
+            }
+            for(auto &a :rectangle_){
+                a.selected = false;
+            }
+            for(auto &p :marker){
+                p.selected = false;
+            }
+            marker.push_back(object_(x, y, hue, radius));
+          
+        }else if(button == 0) {
+            for(auto &g :gauge){
+                g.mouse_release();
+            }
+            for(auto &a :rectangle_){
+                a.mouse_release();
+            }
+            for(auto &a :marker){
+                if(a.selected){
+                    radius = a.radius;
+                    hue = a.hue;
+                }
+            }
+            for(auto &p :marker){
+                p.mouse_release();
+            }
+        }
+    }
+//----------------------------------------------------------------------
+   
     void update(ofFbo &fbo){
         fbo.begin();{
             //ofClear(0,0);
@@ -325,33 +325,21 @@ public:
         }fbo.end();
         
     }
-    void get_radius(float &r){
-        for(auto &a :marker){
-            if(a.selected){
-                r = a.radius;
-            }
-        }
-    }
-    void get_hue(float &c){
-        for(auto &a :marker){
-            if(a.selected){
-                c = a.hue / 256.0;
-            }
-        }
-    }
     void change_radius(float r){
         for(auto &a :marker){
             if(a.selected){
                 a.radius = r;
             }
         }
+        radius = r;
     }
     void change_color(float h){
         for(auto &a :marker){
             if(a.selected){
-                a.hue = h * 256.0;
+                a.hue = h ;
             }
         }
+        hue = h;
     }
     void delete_marker(){
         for(int i = 0; i < marker.size(); i++){
@@ -378,13 +366,13 @@ public:
     }
 
     void reset_gauge(){
-        gauge[0].set_param(width - 20, 20, 40,  6);
-        gauge[1].set_param(width - 20, 60, 40,  6);
-        gauge[2].set_param(width / 2.0,10, 100, 6);
-        rectangle_[0].set_param(10,10,                  60,6);
-        rectangle_[1].set_param(width - 20, 10,         60,6);
-        rectangle_[2].set_param(width - 20,height - 10, 60,6);
-        rectangle_[3].set_param(10,height - 10,         60,6);
+        gauge[0].set_param(width - 20, 20, 40.0/127.0,  6);
+        gauge[1].set_param(width - 20, 60, 40.0/127.0,  6);
+        gauge[2].set_param(width / 2.0,10, 100.0/127.0, 6);
+        rectangle_[0].set_param(10,10,                  60/255.0,   6);
+        rectangle_[1].set_param(width - 20, 10,         60/255.0,   6);
+        rectangle_[2].set_param(width - 20,height - 10, 60/255.0,   6);
+        rectangle_[3].set_param(10,height - 10,         60/255.0,   6);
     }
     void save_gauge(ofJson &j){
         ofJson pt;
@@ -396,6 +384,8 @@ public:
         pt[5] = rectangle_[2].px;
         pt[6] = rectangle_[2].py;
         j["pt"].push_back(pt);
+    }
+    void crop(ofImage &img, bool translucent){
     }
     void crop(ofImage &img){
         float crop_width_on_viewer = rectangle_[1].px - rectangle_[0].px;
@@ -494,6 +484,7 @@ public:
     }
 };
 //-------------------------------------------------//
+//スタックの削除　追加　ページングを行う。
 
 class manager{
     bool inner(float x, float y){
@@ -509,9 +500,7 @@ class manager{
         float Y = y + py;
         return glm::vec2(X, Y);
     }
-    
-    
-    int snapCounter;
+    int snapCounter; //画像保名前作成用のカウンター
     
     //----
     ofJson js;
@@ -519,6 +508,7 @@ class manager{
 public:
     int current_page;
     vector<stack>stacks;
+    static vector<stack>stacks_shared;
     float px, py;//表示位置
     float width, height; // 表示サイズ
     float hue = 0.5;
@@ -529,8 +519,6 @@ public:
     ofFbo fbo;
     ofFbo preview;
     ofFbo live_preview;
-    //float preview_offset_x, preview_offset_y;
-    
  
     manager(){
         
@@ -556,18 +544,43 @@ public:
         change_page();
         noimage.load("chessboard1.jpg");
   
-            ofRegisterMouseEvents(this); // this will enable our circle class to listen to the mouse events.
-           
-       
+        ofRegisterMouseEvents(this); // this will enable our circle class to listen to the mouse events.
     }
+//---------mouse call back section---------------------------------
     void mouseMoved(ofMouseEventArgs & args){
+        if(inner(args.x, args.y)){
+            glm::vec2 vec;
+            vec = get_viwer_position(args.x, args.y);
+            stacks[current_page].mouseMoved(vec.x, vec.y, 0);
+        }
     }
-    void mouseDragged(ofMouseEventArgs & args){};
-    void mousePressed(ofMouseEventArgs & args){};
-    void mouseReleased(ofMouseEventArgs & args){};
+    void mouseDragged(ofMouseEventArgs & args){
+        if(inner(args.x, args.y)){
+            glm::vec2 vec;
+            vec = get_viwer_position(args.x, args.y);
+            stacks[current_page].mouseDraged(vec.x, vec.y, args.button);
+        }
+    };
+    void mousePressed(ofMouseEventArgs & args){
+        if(inner(args.x, args.y)){
+            glm::vec2 vec;
+            vec = get_viwer_position(args.x, args.y);
+            stacks[current_page].mousePressed(vec.x, vec.y, args.button);
+        }
+    };
+    void mouseReleased(ofMouseEventArgs & args){
+        if(inner(args.x, args.y)){
+            glm::vec2 vec;
+            vec = get_viwer_position(args.x, args.y);
+            stacks[current_page].mouseReleased(vec.x, vec.y, args.button);
+        }
+    };
     void mouseScrolled(ofMouseEventArgs & args){};
     void mouseEntered(ofMouseEventArgs & args){};
     void mouseExited(ofMouseEventArgs & args){};
+//--------------------------------------------------------------------------
+    
+    
     
     void capture(ofImage &image){
         string fileName = "snapshot/snapshot_"+ofToString(snapCounter, 5, '0')+".png";
@@ -626,15 +639,10 @@ public:
         }
         change_page();
     }
-    void mouse(int x, int y, int button, int function){
-        if(inner(x,y)){
-            glm::vec2 vec;
-            vec = get_viwer_position(x,y);
-            float hue_ = hue * 256;
-            stacks[current_page].mouse(vec.x, vec.y, button, function, hue_, radius);
-        }
-    }
+
     void update(ofImage &uvc_image, glm::mat4 mat){
+        hue = stacks[current_page].hue;
+        radius = stacks[current_page].radius;
         if(current_page != stacks.size() -1){
             fbo.begin();
             ofClear(0,0);
@@ -653,8 +661,6 @@ public:
             stacks[current_page].simple_crop(uvc_image);
         }
         //stacks[stacks.size() -1].mat = mat;//^^^^^^必要かも！！
-        stacks[current_page].get_radius(radius);
-        stacks[current_page].get_hue(hue);
         //preview = stacks[stacks.size() -1].fbo;//本当に大丈夫！？？
         preview = stacks[current_page].fbo;
         live_preview = stacks[stacks.size() - 1].fbo;
@@ -696,3 +702,20 @@ public:
     }
 };
 };
+/*
+ manager.changeColor .changeRadius
+ →stack.changeColorに伝達：
+ ・その際にselectされているobjectにも伝達
+ ・stackのstack.hue stack.radiusにも伝達
+ 
+ stackでは、右クリックされた際にstack.hue stack.radiusを更新。
+ 更新をmanagerに通知できないので、
+ manger.update内で、manager.radius, manager.hueを更新
+ imGUIは、&manager.radius, &manager.hueとして参照する。
+ */
+/*
+ stackは最も新しいもの stacks[stacks.size()-1 ] は、live画像のクリッピングとして用いている。
+ captureすると、現在のstackつまり stacks[stacks.size()-1 ]をpush_backする。
+ push_backすると、最も最新の　capture　はstackは stacks[stacks.size() -2 ]となるので、これら対してimageやらmatrixやらを付加する。
+ 
+ */

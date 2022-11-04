@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 #include "ofApp.h"
-#include "sheared_stracture.h"
+#include "sheared.h"
 //https://qiita.com/y_UM4/items/7647fd9fc19e60ec5822
 struct Container{
     ofMesh mesh;
@@ -330,10 +330,12 @@ public:
                                 ofDrawSphere(c.mesh.getVertex(c.forceps1_port_vertex),6);
                                 ofDrawSphere(c.mesh.getVertex(c.forceps2_port_vertex),6);
                             }
-                         
+               
+                                
                                 //----MESH_CONATINAIR
                                 
                                 for(auto &mc : mesh_conatinar){
+                            
                                     geo_shader.setUniform1i("u_isLight", 0);
                                     if(mc.use_tecxture){
                                             geo_shader.setUniformTexture("image", mc.fbo.getTexture(), 0);
@@ -345,10 +347,11 @@ public:
                                         ofMultMatrix(mc.matrix);
                                         mc.mesh.draw();
                                     }ofPopMatrix();
-                                }
+                            }
                                 //----CONATINAIR
                            
-                                for(auto &c : this->container_manager.containers){
+                                //for(auto &c : this->container_manager.containers){
+                                for(auto &c : meshHolder::mesh_imported){
                                     geo_shader.setUniform1i("u_isLight", 1);
                                     geo_shader.setUniform4f("color" , c.color);
                                     if(c.parent_isDysplay && c.dysplay){

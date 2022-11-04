@@ -11,6 +11,11 @@ float near = 10.0;
 float far = 3000.0;
 //------
 ObjManager obj_manager;
+//-----static grobal value
+bool meshHolder::enable_picker;
+int meshHolder::nearlest_vertex_from_picker;
+vector<meshContainer> meshHolder::mesh_imported;
+
 
 
 
@@ -65,18 +70,18 @@ void ofApp::update(){
     
     drawTerrios(perspective, easycam);
 
-    glm::mat4 mvm_easycam;
+    
     
     perspective.begin();{
         easycam.begin();{
-            mvm_easycam = easycam.getModelViewMatrix();
+            //mvm_easycam = easycam.getModelViewMatrix();
             easycam.setNearClip(near);
             easycam.setFarClip(far);
             ofPushMatrix();{
                 for(auto mp: viewer.stacks){
                     ofPushMatrix();
                     ofMultMatrix(mp.mat);
-                    cout<<mp.mat<<endl;
+                
                     mp.fbo.getTexture().bind();
                     mp.mesh.draw();
                     mp.fbo.getTexture().unbind();
@@ -102,7 +107,7 @@ void ofApp::update(){
             }ofPopMatrix();
         }easycam.end();
     }perspective.end();
-
+    
     fisheye_left_image.setFromPixels(real_sense.colorimg.ptr(), 848, 800, OF_IMAGE_COLOR);
     
     draw_model(perspective, easycam, realsense_model, real_sense.t265_rawoutput, ofColor(200));
@@ -117,11 +122,10 @@ void ofApp::update(){
     for( auto ctn : viewer.stacks){
         container_stack.push_back(MeshConatiner{ctn.mesh, ctn.mat, ctn.fbo, glm::vec4(0,0,0,0), true});
     }
-    
+    glm::mat4 mvm_easycam = easycam.getModelViewMatrix();
     glm::mat4 mvm = glm::inverse(mvm_easycam);
     
     geeBuffer.update(mvm, container_stack);
-    
     geeBuffer.pick(mouseX, mouseY, mvm);
     
 }
@@ -175,6 +179,7 @@ void ofApp::gui_draw(){
             ImGui::PushStyleColor(ImGuiCol_SliderGrab, (ImVec4)ImColor::HSV(viewer.hue , 1.0f, 1.0f));
             ImGui::PushStyleColor(ImGuiCol_FrameBgActive, (ImVec4)ImColor::HSV(viewer.hue , 1.0f, 1.0f));
             ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, (ImVec4)ImColor::HSV(viewer.hue , 1.0f, 1.0f));
+            //if(ImGui::SliderFloat("HUE", &viewer.hue, 0.0f, 1.0f)){
             if(ImGui::SliderFloat("HUE", &viewer.hue, 0.0f, 1.0f)){
                 viewer.change_color();
             };
@@ -191,16 +196,13 @@ void ofApp::gui_draw(){
             ImGui::SameLine();
             if (ImGui::Button("delete all ")) {
                 viewer.delete_all_marker();
-
             }
             if (ImGui::Button(" capture! ")) {
                 viewer.capture(UVCimage);
             }
             
-            
             if (ImGui::Button(" delete image ")) {
-                
-
+                //----------未実装
             }
             if (ImGui::Button("<")) {
                 viewer.backward_page();
@@ -219,14 +221,13 @@ void ofApp::gui_draw(){
             ImGui::Text(" gauge :");
             ImGui::SameLine();
             if (ImGui::Button(" reset ")) {
-                
+                //----------未実装
             }
             ImGui::SameLine();
             if (ImGui::Button(" save ")) {
-                
+                //----------未実装
             }
             ImTextureID textureID = ( ImTextureID )( uintptr_t )viewer.preview.getTexture().getTextureData().textureID ;
-            //auto size = ImGui::GetContentRegionAvail() ; // for example
             ImGui::Image( textureID, ImVec2(viewer.preview.getWidth(),viewer.preview.getHeight()) ) ;
         }ImGui::End();
         ImGui::Begin("UVC source");{
@@ -307,8 +308,10 @@ void ofApp::gui_draw(){
                     glm::mat4 E(1.0f);
                     glm::vec4 color_= glm::vec4( 1.0, 0.0, 0.0 , 1.0);
                     for( auto ml : o.mesh_){
-                       geeBuffer.container_manager.add_mesh(ml, o.thum);
+                        //geeBuffer.container_manager.add_mesh(ml, o.thum);
+                        mesh_controller.add_mesh(ml, o.thum);
                     }
+                    
                 }
             }
             if(obj_manager.available()){
@@ -355,6 +358,7 @@ void ofApp::gui_draw(){
            
             if(ImGui::SliderFloat("Float", &fov, 40.0f, 120.0f)){
                 easycam.setFov(fov);
+                geeBuffer.set_camera_param(fov);
             }
             if(ImGui::SliderFloat("Near", &near, 1.0f, 200.0f)){
                 easycam.setFov(fov);
@@ -444,22 +448,22 @@ void ofApp::keyReleased(int key){
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
-    viewer.mouse(x, y, 0, 0);
+ 
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button){
-    viewer.mouse(x, y, button, 1);
+   
 }
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
-    viewer.mouse(x, y, button, 2);
+    
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
-    viewer.mouse(x, y, button, 3);
+    
 }
 
 //--------------------------------------------------------------
