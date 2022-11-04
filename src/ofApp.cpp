@@ -2,31 +2,32 @@
 
 ofImage fisheye_left_image;
 ofxAssimpModelLoader realsense_model;
-//std::vector<ofFbo> fboes;
 ofMesh realsense_mesh;
-satackviewer::manager viewer;
-vector<MeshConatiner> mesh_container_stack;
+stack_manager viewer;
 //----
 float near = 10.0;
 float far = 3000.0;
 //------
 ObjManager obj_manager;
 //-----static grobal value
-bool meshHolder::enable_picker;
-int meshHolder::nearlest_vertex_from_picker;
+
+bool Controller::enable_picker;
+int Controller::nearlest_vertex_from_picker;
 vector<meshContainer> meshHolder::mesh_imported;
-
-
-
+vector<captureStack> stack_manager::stacks;
 
 //--------------------------------------------------------------
 void ofApp::setup(){
     //---realsense
     real_sense.setup();
     //g-buffer
-    geeBuffer.setup(480, 400, 480, 270);
+    //geeBuffer.setup(480, 400, 480, 270);
+    geeBuffer.setup( 480, 270 );
     geeBuffer.set_camera_param(70);
-    //-----
+    //-----picker set up
+    picker.setup(480, 400, 480, 270);
+    picker.set_camera_param(70);
+    //---------ultrasound_finder
     viewer.setup(0 ,0 ,480, 270);
     //------imGUI セットアップ
     gui.setup();
@@ -64,21 +65,17 @@ void ofApp::update(){
     UVCimage.setFromPixels(uvc_cap.pixels);
     glm::mat4 m_ = eigen_glm(real_sense.ultrasound);
     viewer.update(UVCimage, m_);
-    //gizomo rotation model matrix
     mygizmo.unable_easycam(easycam);
     mygizmo.update(gizmocam);
     
     drawTerrios(perspective, easycam);
 
-    
-    
     perspective.begin();{
         easycam.begin();{
-            //mvm_easycam = easycam.getModelViewMatrix();
             easycam.setNearClip(near);
             easycam.setFarClip(far);
             ofPushMatrix();{
-                for(auto mp: viewer.stacks){
+                for(auto mp: stack_manager::stacks){
                     ofPushMatrix();
                     ofMultMatrix(mp.mat);
                 
@@ -118,16 +115,12 @@ void ofApp::update(){
     }
     arucoManager.update( real_sense.markerIdsL_, real_sense.tvecs_, real_sense.rvecs_, real_sense.markerCornersL_, real_sense.t265_rawoutput);
     arucoManager.draw(perspective, easycam);
-    vector<MeshConatiner> container_stack;
-    for( auto ctn : viewer.stacks){
-        container_stack.push_back(MeshConatiner{ctn.mesh, ctn.mat, ctn.fbo, glm::vec4(0,0,0,0), true});
-    }
+ 
     glm::mat4 mvm_easycam = easycam.getModelViewMatrix();
     glm::mat4 mvm = glm::inverse(mvm_easycam);
     
-    geeBuffer.update(mvm, container_stack);
-    geeBuffer.pick(mouseX, mouseY, mvm);
-    
+    geeBuffer.update(mvm);
+    picker.pick(mouseX, mouseY, mvm);
 }
 
 //--------------------------------------------------------------
@@ -211,7 +204,7 @@ void ofApp::gui_draw(){
                 viewer.forward_page();
             }
             //ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, (ImVec4)ImColor(255,255,255,255));v
-            if(ImGui::SliderInt("page", &viewer.current_page, 0, viewer.stacks.size() -1)){
+            if(ImGui::SliderInt("page", &viewer.current_page, 0, stack_manager::stacks.size() -1)){
                 viewer.change_page();
                 
             }
@@ -309,7 +302,7 @@ void ofApp::gui_draw(){
                     glm::vec4 color_= glm::vec4( 1.0, 0.0, 0.0 , 1.0);
                     for( auto ml : o.mesh_){
                         //geeBuffer.container_manager.add_mesh(ml, o.thum);
-                        mesh_controller.add_mesh(ml, o.thum);
+                        mesh_holder.add_mesh(ml, o.thum);
                     }
                     
                 }
@@ -372,61 +365,50 @@ void ofApp::gui_draw(){
                 //viewer.hover = true;
                 easycam.disableMouseInput();
             }
-            if(geeBuffer.container_manager.available()){
-                ImGui::Text("group : ");
-                ImGui::SameLine();string c1_ = geeBuffer.container_manager.getParent();
+            if(mesh_holder.isabailabe()){
+                ImGui::Text("family : ");
+                ImGui::SameLine();string c1_ = mesh_holder.parent_name;
                 char* c1 = const_cast<char*>(c1_.c_str());
                 
                 ImGui::Text(c1);
                 
-                string c2_ = to_string(geeBuffer.container_manager.current_page);
+                string c2_ = mesh_holder.given_name;
                 char* c2 = const_cast<char*>(c2_.c_str());
                 ImGui::SameLine();ImGui::Text(c2);
                 ImGui::SameLine();
-                if(geeBuffer.container_manager.show()){
+                if(mesh_holder.hide_or_show){
                     if (ImGui::Button(" hide ")) {
-                        geeBuffer.container_manager.flip_show();
+                        mesh_holder.hide();
                     }
                 }else{
                         if (ImGui::Button(" show ")) {
-                            geeBuffer.container_manager.flip_show();
+                            mesh_holder.show();
                         }
                 }
                 
-                static char buf1[256] = "";//http://www.sanko-shoko.net/note.php?id=qlv3
-                if (ImGui::InputText("name", buf1, 256)) {
-                   
-                }
-  
-           
-                if(ImGui::Checkbox(" pick target ", &geeBuffer.container_manager.enable_picker)){
-                    geeBuffer.container_manager.enable_pick();
-                }
+                /*
                 if(ImGui::SliderInt("PORT ID", &geeBuffer.port_id, 0, 2)){
                     
                 };
-            
-                if(ImGui::ColorEdit3("color", geeBuffer.container_manager.col1)){
-                    geeBuffer.container_manager.change_color();
+            */
+                if(ImGui::ColorEdit3("color", mesh_holder.col)){
+                    mesh_holder.change_color();
                 }
-                /*
-                if(ImGui::SliderFloat("HUE2", &geeBuffer.container_manager.hue, 0.0f, 1.0f)){
-                    geeBuffer.container_manager.change_color();
-                };
-                 */
-                if (ImGui::Button(" apply group ")) {
-                    geeBuffer.container_manager.change_color_group();
+                if (ImGui::Button(" apply family ")) {
+                    mesh_holder.change_color_all();
                 }
                 if (ImGui::Button("<")) {
-                    geeBuffer.container_manager.backward_page();
+                    mesh_holder.backward_page();
                 }
                 ImGui::SameLine();if (ImGui::Button(">")) {
-                    geeBuffer.container_manager.forward_page();
+                    mesh_holder.forward_page();
                 }
                 ImGui::SameLine();if (ImGui::Button(" delete mesh ")) {
-                    //obj_manager.delete_obj();
+                    mesh_holder.delet_mesh();
                 }
-                
+                if(ImGui::Checkbox(" picker-target ", &Controller::enable_picker )){
+                    mesh_holder.toggle_picker_target_button();
+                }
             }
         }ImGui::End();
     }gui.end();

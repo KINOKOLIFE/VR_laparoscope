@@ -117,7 +117,6 @@
 		D825FF1F1EA48B305BB428B7 /* scene.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = scene.h; path = ../../../addons/ofxAssimpModelLoader/libs/assimp/include/assimp/scene.h; sourceTree = SOURCE_ROOT; };
 		D91100C1FBA245AD6CB55BD3 /* ofxImGui.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ofxImGui.h; path = ../../../addons/ofxImGui/src/ofxImGui.h; sourceTree = SOURCE_ROOT; };
 		E135C7F22D40FCFD9C5AB94B /* imgui.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = imgui.h; path = ../../../addons/ofxImGui/libs/imgui/src/imgui.h; sourceTree = SOURCE_ROOT; };
-		E290AB0A2914228E00113116 /* controller.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = controller.h; sourceTree = "<group>"; };
 		E290AB0C291446D300113116 /* mesh_holder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mesh_holder.h; sourceTree = "<group>"; };
 		E290AB0D291449A600113116 /* picker.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = picker.h; sourceTree = "<group>"; };
 		E29E5B0E290A99E3008F808A /* g_buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = g_buffer.h; sourceTree = "<group>"; };
@@ -128,7 +127,7 @@
 		E2CF094028EEEB390041FE7D /* sheared.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sheared.h; sourceTree = "<group>"; };
 		E2CF094128EEF6EB0041FE7D /* uvc_capture.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = uvc_capture.h; sourceTree = "<group>"; };
 		E2D0AD89290024AA00330EF4 /* gizmo3d.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gizmo3d.h; sourceTree = "<group>"; };
-		E2D912A92905339400482803 /* stack.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stack.h; sourceTree = "<group>"; };
+		E2D912A92905339400482803 /* stack_manager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stack_manager.h; sourceTree = "<group>"; };
 		E2EA77922912CF2500232E68 /* libopencv_ccalib.4.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_ccalib.4.5.dylib; path = ../../../../../../../usr/local/Cellar/opencv/4.5.4/lib/libopencv_ccalib.4.5.dylib; sourceTree = "<group>"; };
 		E2EA77942912CF4700232E68 /* libopencv_calib3d.4.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_calib3d.4.5.dylib; path = ../../../../../../../usr/local/Cellar/opencv/4.5.4/lib/libopencv_calib3d.4.5.dylib; sourceTree = "<group>"; };
 		E2FE08A628EFF16900B29ADE /* graphics.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = graphics.h; sourceTree = "<group>"; };
@@ -872,7 +871,6 @@
 				E4B69E1E0A3A1BDC003C02F2 /* ofApp.cpp */,
 				E4B69E1F0A3A1BDC003C02F2 /* ofApp.h */,
 				E2CF094028EEEB390041FE7D /* sheared.h */,
-				E290AB0A2914228E00113116 /* controller.h */,
 				E2CF094128EEF6EB0041FE7D /* uvc_capture.h */,
 				E2FE08A628EFF16900B29ADE /* graphics.h */,
 				E2FE08B428EFF6DD00B29ADE /* realsense.h */,
@@ -884,7 +882,7 @@
 				E290AB0C291446D300113116 /* mesh_holder.h */,
 				E290AB0D291449A600113116 /* picker.h */,
 				E2D0AD89290024AA00330EF4 /* gizmo3d.h */,
-				E2D912A92905339400482803 /* stack.h */,
+				E2D912A92905339400482803 /* stack_manager.h */,
 				E29E5B0E290A99E3008F808A /* g_buffer.h */,
 			);
 			path = src;

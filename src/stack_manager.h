@@ -2,10 +2,9 @@
 #include <iostream>
 #include <vector>
 #include "ofApp.h"
-#include "sheared.h"
-namespace satackviewer
+//#include "sheared.h"
 
-{
+
 class object_{
     public:
     float px,py;
@@ -131,7 +130,7 @@ class object_{
     }
 };
 //-----------------------------------------------------------
-class stack{
+class captureStack{
 public:
     int width, height;
     //-------------
@@ -158,7 +157,7 @@ public:
     glm::vec4 color;
     
     //-------
-    stack(int _width, int _height):width(_width), height(_height){
+    captureStack(int _width, int _height):width(_width), height(_height){
         rectangle_.push_back(object_());
         rectangle_.push_back(object_());
         rectangle_.push_back(object_());
@@ -168,7 +167,7 @@ public:
         gauge.push_back(object_(width / 2.0,10, 100.0/255.0, 6));
         reset_gauge();
     }
-    stack(){
+    captureStack(){
         
     }
 //---------------mouse call back section-------------------------------------
@@ -385,7 +384,7 @@ public:
         pt[6] = rectangle_[2].py;
         j["pt"].push_back(pt);
     }
-    void crop(ofImage &img, bool translucent){
+    void crop(ofImage &img, bool make_transparent){
     }
     void crop(ofImage &img){
         float crop_width_on_viewer = rectangle_[1].px - rectangle_[0].px;
@@ -483,10 +482,12 @@ public:
         setNormals(this->mesh);
     }
 };
+
 //-------------------------------------------------//
 //スタックの削除　追加　ページングを行う。
 
-class manager{
+
+class stack_manager{
     bool inner(float x, float y){
         return  ( px < x && x < ( px + width ) && py < y && y < ( py + height ));
     }
@@ -507,8 +508,8 @@ class manager{
     
 public:
     int current_page;
-    vector<stack>stacks;
-    static vector<stack>stacks_shared;
+    //vector<stack> stacks;
+    static vector<captureStack> stacks;
     float px, py;//表示位置
     float width, height; // 表示サイズ
     float hue = 0.5;
@@ -520,7 +521,7 @@ public:
     ofFbo preview;
     ofFbo live_preview;
  
-    manager(){
+    stack_manager(){
         
     }
 
@@ -607,7 +608,7 @@ public:
     }
     
     void add_stack(){
-        stack s(width, height);
+        captureStack s(width, height);
         s.set_from_json(js);
         //s.mat = glm::mat4(0);
         stacks.push_back(s);
@@ -701,17 +702,18 @@ public:
         }
     }
 };
-};
+//};
+
 /*
- manager.changeColor .changeRadius
+ stack_manager.changeColor .changeRadius
  →stack.changeColorに伝達：
  ・その際にselectされているobjectにも伝達
  ・stackのstack.hue stack.radiusにも伝達
  
  stackでは、右クリックされた際にstack.hue stack.radiusを更新。
- 更新をmanagerに通知できないので、
- manger.update内で、manager.radius, manager.hueを更新
- imGUIは、&manager.radius, &manager.hueとして参照する。
+ 更新をstack_managerに通知できないので、
+ manger.update内で、stack_manager.radius, stack_manager.hueを更新
+ imGUIは、&stack_manager.radius, &stack_manager.hueとして参照する。
  */
 /*
  stackは最も新しいもの stacks[stacks.size()-1 ] は、live画像のクリッピングとして用いている。

@@ -1,6 +1,7 @@
 #pragma once
 #include "ofApp.h"
 
+
 class Picker {
 public:
     float px, py, width, height;
@@ -9,6 +10,7 @@ public:
     ofFbo g_buffer_fbo;
     ofMatrix4x4 projection_matrix;
     float focal_length;
+    static bool enable_picker;
     //------------------
     Picker(){
         
@@ -25,6 +27,14 @@ public:
         ofRegisterMouseEvents(this);
     }
     void setup(){
+        g_buffer_fbo.allocate(width , height);
+        ofRegisterMouseEvents(this);
+    }
+    void setup(ofRectangle &rectagle){
+        px = rectagle.x;
+        py = rectagle.y;
+        width = rectagle.width;
+        height = rectagle.height;
         g_buffer_fbo.allocate(width , height);
         ofRegisterMouseEvents(this);
     }
@@ -52,8 +62,17 @@ public:
         float fov = camera.getFov();
         focal_length = height / 2.0 / tan(fov / 2.0 * M_PI /180);
     }
+    void set_camera_param(ofCamera &camera){
+        g_buffer_fbo.begin();
+        camera.begin();
+            projection_matrix = camera.getProjectionMatrix();
+        camera.end();
+        g_buffer_fbo.end();
+        float fov = camera.getFov();
+        focal_length = height / 2.0 / tan(fov / 2.0 * M_PI /180);
+    }
     void pick(float mx, float my, glm::mat4 &camera_position){
-        if(inner(mx, my) && meshHolder::enable_picker ){
+        if(inner(mx, my) && Controller::enable_picker ){
             for( auto c_m : meshHolder::mesh_imported){
                 if( c_m.pick_target ){
                     //-------------------候補を絞る。裏面、も選択されている。
@@ -87,7 +106,8 @@ public:
                         for(int i = 0; i < candities_vertex.size(); i++){
                             float distance3d = glm::distance(apex, candities_vertex[i]);
                             if(distance3d < 20){
-                                meshHolder::nearlest_vertex_from_picker = candities_vertix_index[i];
+                                Controller::nearlest_vertex_from_picker = candities_vertix_index[i];
+                               
                                 out = true;
                                 break;
                             }

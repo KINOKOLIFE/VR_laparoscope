@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ofMain.h"
-#include "controller.h"
 #include "ofxAssimpModelLoader.h"
 
 #include <opencv2/opencv.hpp>
@@ -19,12 +18,15 @@
 #include "realsense.h"
 #include "hid.h"
 #include "aruco_manager.h"
+
 #include "mesh_holder.h"
+#include "picker.h"
 #include "objLoader.h"
 #include "gizmo3d.h"
+#include "stack_manager.h"
 #include "g_buffer.h"
-#include "stack.h"
-#include "picker.h"
+
+
 
 class ofApp : public ofBaseApp{
 
@@ -74,13 +76,15 @@ class ofApp : public ofBaseApp{
     aruco_manager aruco_manager_();
     //------mesh
     vector<objLoader> objs;
-    MeshConatiner mesh_container;
-    meshController mesh_controller;
+
+    meshHolder mesh_holder;
     //-------gizmo_camera
     ofEasyCam gizmocam;
     gizmo3d mygizmo;
     //------g-bffer
     gbuffer geeBuffer;
+    //----picker
+    Picker picker;
     //---
     aruco_manager arucoManager;
     

@@ -132,8 +132,10 @@ static void drawTerrios(ofFbo &fbo,ofEasyCam &cam){
     
     
     fbo.begin();
+    
         ofClear(0);
-    ofBackground(50);
+    //ofBackground(50);
+    ofBackgroundGradient(ofColor(64), ofColor(0));
         cam.begin();
             ofDrawGrid(10,10,true,false,false,true);
             ofDrawAxis(10);
