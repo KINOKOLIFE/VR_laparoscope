@@ -130,6 +130,8 @@
 		E2D912A92905339400482803 /* stack_manager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stack_manager.h; sourceTree = "<group>"; };
 		E2EA77922912CF2500232E68 /* libopencv_ccalib.4.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_ccalib.4.5.dylib; path = ../../../../../../../usr/local/Cellar/opencv/4.5.4/lib/libopencv_ccalib.4.5.dylib; sourceTree = "<group>"; };
 		E2EA77942912CF4700232E68 /* libopencv_calib3d.4.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_calib3d.4.5.dylib; path = ../../../../../../../usr/local/Cellar/opencv/4.5.4/lib/libopencv_calib3d.4.5.dylib; sourceTree = "<group>"; };
+		E2EFB12229166B0200119B5C /* ultrasound_esp32.ino */ = {isa = PBXFileReference; lastKnownFileType = text; path = ultrasound_esp32.ino; sourceTree = "<group>"; };
+		E2EFB12329168F5900119B5C /* scope_side_esp32.ino */ = {isa = PBXFileReference; lastKnownFileType = text; path = scope_side_esp32.ino; sourceTree = "<group>"; };
 		E2FE08A628EFF16900B29ADE /* graphics.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = graphics.h; sourceTree = "<group>"; };
 		E2FE08A828EFF3FF00B29ADE /* librealsense2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = librealsense2.dylib; path = ../../../../../librealsense/build/librealsense2.dylib; sourceTree = "<group>"; };
 		E2FE08AA28EFF41500B29ADE /* libceres.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libceres.dylib; path = "../../../../../../../usr/local/Cellar/ceres-solver/2.0.0_4/lib/libceres.dylib"; sourceTree = "<group>"; };
@@ -877,6 +879,8 @@
 				E2FE08B628F024B600B29ADE /* EQKF.cpp */,
 				E2FE08B728F024B600B29ADE /* EQKF.hpp */,
 				E2BF109D28F25B270006E851 /* hid.h */,
+				E2EFB12229166B0200119B5C /* ultrasound_esp32.ino */,
+				E2EFB12329168F5900119B5C /* scope_side_esp32.ino */,
 				E2BF10A028F30DF70006E851 /* aruco_manager.h */,
 				E2BF10B528F6330B0006E851 /* objLoader.h */,
 				E290AB0C291446D300113116 /* mesh_holder.h */,

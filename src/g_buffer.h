@@ -61,6 +61,7 @@ public:
         g_buffer.checkStatus();
         ofEnableArbTex();
         //----
+        
         quad.setMode(OF_PRIMITIVE_TRIANGLE_FAN);
         quad.addVertex(ofVec3f(1.0, 1.0, 0.0)); // top-right
         quad.addTexCoord(ofVec2f(1.0f, 0.0f));
@@ -103,14 +104,14 @@ public:
         glm::mat4x4 model_view_matrix = glm::inverse(camera_position);
         fbo.begin();{
             ofClear(0,0);
-            
+         
             glEnable(GL_DEPTH_TEST);
             //1. render geometry to G-Buffer-------------------------------
             g_buffer.begin();{
                 g_buffer.activateAllDrawBuffers();
+                
                 glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            
                 camera.begin();{
                     geo_shader.begin();{
                         geo_shader.setUniformMatrix4f("view", zero_position);
@@ -174,6 +175,7 @@ public:
             // 3. lighting Pass--------------------------------------------
             glDisable(GL_DEPTH_TEST);
             phong_shader.begin();{
+            
                 phong_shader.setUniformTexture("gPosition", g_buffer.getTexture(0), 0);
                 phong_shader.setUniformTexture("gNormal", g_buffer.getTexture(1), 1);
                 phong_shader.setUniformTexture("gAlbedo", g_buffer.getTexture(2), 2);

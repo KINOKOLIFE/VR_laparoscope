@@ -26,7 +26,7 @@ public:
                 //devices_list.push_back( (devices[i].deviceName).c_str() );//https://www.sejuku.net/blog/52403
             }
         }
-        image.load("test_pattern.png");
+        image.load("MATSUMOTO.jpeg");
         make_test_pattern();
     }
     void make_test_pattern(){
@@ -34,7 +34,6 @@ public:
         f.allocate(960,540);
         f.begin();
         ofClear(0);
-        //ofBackground(200);
         image.draw(0,0);
         f.end();
         f.readToPixels(pixels);
@@ -45,7 +44,7 @@ public:
         width = _width;
         height = _height;
         cam.setDeviceID(index);
-        cam.initGrabber(_width, _height, false);//第３引数を入れないと落ちる。
+        cam.setup(_width, _height, false);//第３引数を入れないと落ちる。
         setup = false;
         
     }

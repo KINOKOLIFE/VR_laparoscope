@@ -125,7 +125,7 @@ public:
     void mouseDragged(ofMouseEventArgs & args){};
     void mousePressed(ofMouseEventArgs & args){};
     void mouseReleased(ofMouseEventArgs & args){
-
+        //ここに頂点追加の処理を書く予定
     };
     void mouseScrolled(ofMouseEventArgs & args){};
     void mouseEntered(ofMouseEventArgs & args){};

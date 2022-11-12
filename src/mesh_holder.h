@@ -14,6 +14,11 @@ struct meshContainer{
     int camera_port_vertex;
     int forceps1_port_vertex;
     int forceps2_port_vertex;
+    float specular_material = 0.8;
+    float diffuse_material= 0.8;
+    float ambient_material= 0.8;
+    float emmisive_material= 0.8;
+
 };
 
 class meshHolder{

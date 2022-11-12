@@ -1,102 +1,93 @@
 #pragma once
 #include "ofApp.h"
 
-class gizmo3d{
+class Gizmo{
 public:
-    bool enable = false;
-    glm::mat4x4 fake_camera_previous;
-    glm::mat4x4 delta;
-    glm::mat4x4 model_previous;
-    glm::mat4x4 model;
+    float px, py, width, height;
+    bool enable = false;;
+    
+    glm::mat4 previous;
+    glm::mat4 current;
+    glm::mat4 rotation;
+    glm::mat4 cam_mat;
+    glm::vec3 startVec;
+    
+    Gizmo(){
+        
+    }
+    void setup(ofRectangle &area){
+        ofRegisterMouseEvents(this);
+        px = area.x;
+        py = area.y;
+        width = area.width;
+        height = area.height;
+    }
+    void update(ofEasyCam &cam){
+        if(this->enable){
+            cam.disableMouseInput();
+            cam_mat = glm::inverse(cam.getModelViewMatrix());
+            cam_mat[3][0] = 0.0;
+            cam_mat[3][1] = 0.0;
+            cam_mat[3][2] = 0.0;
+        }else{
+            cam.enableMouseInput();
+        }
+        
+    }
+    void enable_gizmo(){
+        this->enable = !this->enable;
+    }
+    void mouseMoved(ofMouseEventArgs & args){
 
-    gizmo3d(){
-        fake_camera_previous = glm::mat4x4(1.0f);
-        delta = glm::mat4x4(1.0f);
-        model_previous = glm::mat4x4(1.0f);
-        model = glm::mat4x4(1.0f);
     }
-    void setup(ofEasyCam &easycam, ofRectangle area){
-        easycam.setControlArea(area);
-    }
-    void update(ofEasyCam &gizmo_camera){
-        gizmo_camera.begin();
-        if(this->enable){
-            delta = glm::inverse(fake_camera_previous) * gizmo_camera.getModelViewMatrix();
-            model = model_previous * delta;
-            
+    void mouseDragged(ofMouseEventArgs & args){
+        if(this->enable && inner(args.x, args.y)){
+            glm::vec3 currentVec = glm::vec3 ( -(args.x - px - width /2.0), args.y - py - height /2.0, 200);
+            if(args.button == 0){
+                currentVec = glm::normalize(currentVec);
+                startVec = glm::normalize(startVec);
+                glm::vec3 a1 = glm::vec3( cam_mat * glm::vec4(currentVec, 1.0));
+                glm::vec3 b1 = glm::vec3( cam_mat * glm::vec4(startVec, 1.0));
+                
+                float dot = glm::dot( a1, b1 );
+                float angle = glm::acos(dot);
+                 
+                glm::vec3 axis = cross(a1, b1);
+                axis = glm::normalize(axis);
+                rotation = glm::rotate( glm::mat4(), angle , axis);
+                current =  rotation * previous;
+            }
+           
+            if(args.button == 1){
+                glm::vec3 delta = currentVec - startVec;
+                delta.x =  - delta.x;
+                delta.y =  - delta.y;
+                delta.z =  0.0f;
+                delta =  glm::vec3( cam_mat * glm::vec4(delta, 1.0));
+                auto T = glm::translate( glm::mat4(), delta );
+                current =   previous * T;
+            }
+        
         }
-        gizmo_camera.end();
-    }
-    void getModel(glm::mat4x4 &model_){
-        model_ = glm::mat4x4(model);
-    }
-    void enable_gozmo(ofEasyCam &fake_camera){
-        if(this->enable){
-            this->enable = false;
-            model_previous = glm::mat4x4(model);
-            delta = glm::mat4x4(1.0f);
-            
-        }else{
-            this->enable = true;
-            fake_camera_previous = glm::mat4x4(fake_camera.getModelViewMatrix());
+    };
+    void mousePressed(ofMouseEventArgs & args){
+        if(this->enable && inner(args.x, args.y)){
+            startVec = glm::vec3 (-(args.x - px - width /2.0), args.y -py  - height /2.0, 200);
+            //startVec = glm::normalize(startVec);
+            current = previous;
         }
-    }
-    void unable_easycam(ofEasyCam &perspective_camera){
-        if(this->enable){
-            perspective_camera.disableMouseInput();
-        }else{
-            perspective_camera.enableMouseInput();
+    };
+    void mouseReleased(ofMouseEventArgs & args){
+        if(this->enable && inner(args.x, args.y)){
+            previous = current;
         }
+    };
+    void mouseScrolled(ofMouseEventArgs & args){
+        
+    };
+    void mouseEntered(ofMouseEventArgs & args){};
+    void mouseExited(ofMouseEventArgs & args){};
+    bool inner(float x, float y){
+        return px < x && x < px + width && py < y && y < py + height;
     }
 };
-/*
- ----GIZMO 3D --------------
- ofRectangle area(400,0,400,400); 適応したいfboのスクリーンへの描画領域
- ofFbo perspective;  適応したいfbo
- ofEasyCam perspective_camera;　適応したいfboのeasycam
- ofEasyCam rotation_camera;　モデリング座標を回転させるためのfake camera
- 
-//--------------
-void ofApp::setup(){
-    perspective.allocate(area.getWidth(), area.getHeight());
-    perspective_camera.setControlArea(area);
-    rotation_camera.setControlArea(area);
-}
-
-//--------------------------------------------------------------
-void ofApp::update(){
-    myRotator.unable_easycam(perspective_camera);//元々（この場合はperspectiveの）easycamをストップさせる。
- 
-    //--------------
-    myRotator.update(rotation_camera);
-    //-------------
-    ofFill();
-    perspective.begin();
-        ofClear(0);
-        ofBackground(50);
-        perspective_camera.begin();
-            ofDrawGrid(10,10,true,false,false,true);
-            ofDrawAxis(10);
-            ofPushMatrix();
-                ofMultMatrix(myRotator.model_previous);・・・・初期位置からの変位。
-                ofMultMatrix(myRotator.delta);・・・・今回の変位。
-（ もう少し洗練できるかも ofMultMatrix(myRotator.dist);とか）
-                ofTranslate(50, 50, 50);
-                ofDrawBox(100);
-            ofPopMatrix();
-        perspective_camera.end();
-    perspective.end();
-   
-}
-
-//--------------------------------------------------------------
-void ofApp::draw(){
-    perspective.draw(area.getX(), area.getY());
-}
-
-//--------------------------------------------------------------
-void ofApp::keyPressed(int key){
-    myRotator.enable_gizmo(rotation_camera);//オブジェクトを回転させるモードへ入る時に使用
-}
-
-*/

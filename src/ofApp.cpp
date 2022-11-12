@@ -15,9 +15,13 @@ bool Controller::enable_picker;
 int Controller::nearlest_vertex_from_picker;
 vector<meshContainer> meshHolder::mesh_imported;
 vector<captureStack> stack_manager::stacks;
+glm::mat4 Controller::offset_1;
 
 //--------------------------------------------------------------
 void ofApp::setup(){
+    //---gizmo
+    mygizmo.setup(area1);
+    Controller::offset_1 = glm::mat4(1.0f);
     //---realsense
     real_sense.setup();
     //g-buffer
@@ -36,6 +40,7 @@ void ofApp::setup(){
     //3d perspective
     perspective.allocate(area2.getWidth(), area2.getHeight());
     easycam.setControlArea(area2);
+    light.setSpotlight();
     //--
     fisheye_left_image.allocate(848, 800, OF_IMAGE_GRAYSCALE);
     //--
@@ -47,26 +52,24 @@ void ofApp::setup(){
     ofDisableArbTex();
     
     //---human interface device
-    HID = new hid();
-    ofAddListener(HID->dragging_button1, this, &ofApp::button_1_drag);
-    ofAddListener(HID->up_button1, this, &ofApp::button_1_up);
-    ofAddListener(HID->up_button2, this, &ofApp::button_2_up);
-    ofAddListener(HID->up_button3, this, &ofApp::button_3_up);
-    hid_setup = HID->setup();
-    if(hid_setup){
-        HID->startThread();
-    }
-   //--gizmo
-    gizmocam.setControlArea(area2);
+    esp32_hid_us = new esp32_HID_us();
+    esp32_hid_camera = new esp32_HID_camera();
+    //ofAddListener(HID->dragging_button1, this, &ofApp::button_1_drag);
+    //ofAddListener(HID->up_button1, this, &ofApp::button_1_up);
+    //ofAddListener(HID->up_button2, this, &ofApp::button_2_up);
+    //ofAddListener(HID->up_button3, this, &ofApp::button_3_up);
+    hid_event_discatcher = new HidEventDiscpatcher();
     
+    ofAddListener(esp32_hid_us->capture_stack, this, &ofApp::capture_stack);
 }
 //--------------------------------------------------------------
 void ofApp::update(){
     UVCimage.setFromPixels(uvc_cap.pixels);
-    glm::mat4 m_ = eigen_glm(real_sense.ultrasound);
-    viewer.update(UVCimage, m_);
-    mygizmo.unable_easycam(easycam);
-    mygizmo.update(gizmocam);
+   //
+    glm::mat4 mm = eigen_glm(real_sense.ultrasound);
+    viewer.update(UVCimage, mm);
+    
+    mygizmo.update(easycam);
     
     drawTerrios(perspective, easycam);
 
@@ -76,32 +79,35 @@ void ofApp::update(){
             easycam.setFarClip(far);
             ofPushMatrix();{
                 for(auto mp: stack_manager::stacks){
-                    ofPushMatrix();
-                    ofMultMatrix(mp.mat);
-                
-                    mp.fbo.getTexture().bind();
-                    mp.mesh.draw();
-                    mp.fbo.getTexture().unbind();
-                    ofPopMatrix();
+                    ofPushMatrix();{
+                        ofMultMatrix(mp.mat);
+                        ofMultMatrix(mp.offset);
+                        mp.fbo.getTexture().bind();
+                            mp.mesh.draw();
+                        mp.fbo.getTexture().unbind();
+                    }ofPopMatrix();
                 }
-                ofEnableSeparateSpecularLight();
-                ofLight light;
                 light.enable();
+                ofEnableSeparateSpecularLight();
+                for(auto me:meshHolder::mesh_imported){
+                    material.begin();{
+                    me.mesh.drawFaces();
+                    }material.end();
+                }
                 for(int i = 0; i < obj_manager.obj_models.size(); i++){
                     if(obj_manager.obj_models[i].show){
-                        ofSetColor(ofColor::gray);
-                        //obj_manager.obj_models[i].model.drawWireframe();
-                        
-                        glPointSize(2);
-                        ofSetColor(ofColor::red);
-                        //obj_manager.obj_models[i].model.drawVertices();
-                        obj_manager.obj_models[i].model.drawFaces();
+                        ofPushMatrix();{
+                            ofTranslate(0, 200 , 0);
+                            obj_manager.obj_models[i].model.drawFaces();
+                        }ofPopMatrix();
                     }
                 }
-                ofMultMatrix(mygizmo.model);
-                //ofTranslate(20, 20, -20);
-                //ofDrawBox(40);
+                ofTranslate(50, 50, -50);
+               // ofMultMatrix(Controller::offset_1);
+                ofMultMatrix(mygizmo.current);
+                ofDrawBox(40);
             }ofPopMatrix();
+            light.disable();
         }easycam.end();
     }perspective.end();
     
@@ -131,8 +137,12 @@ void ofApp::draw(){
     perspective.draw(area2);
     geeBuffer.fbo.draw(480,400);
     viewer.fbo.draw(viewer.px,  viewer.py, viewer.width, viewer.height);
-    //viewer.stacks[viewer.stacks.size() - 1].fbo.draw(0,0);
     gui_draw();
+}
+//--------------------------------------------------------------
+void ofApp::capture_stack(bool &b){
+    viewer.capture(UVCimage);
+    ofLog(OF_LOG_NOTICE) << "capture stack";
 }
 //--------------------------------------------------------------
 void ofApp::button_1_drag(bool &b){
@@ -355,10 +365,34 @@ void ofApp::gui_draw(){
             }
             if(ImGui::SliderFloat("Near", &near, 1.0f, 200.0f)){
                 easycam.setFov(fov);
+                geeBuffer.set_camera_param(fov);
             }
             if(ImGui::SliderFloat("far", &far, 500.0f, 5000.0f)){
                 easycam.setFov(fov);
+                geeBuffer.set_camera_param(fov);
             }
+        }ImGui::End();
+//-------------------
+        ImGui::Begin("lighting");{
+            if(ImGui::SliderFloat("specular_light", &specular_light, 0.0f, 1.0f)){
+                light.setSpecularColor(specular_light);
+            };
+            if(ImGui::SliderFloat("diffuse_light", &diffuse_light, 0.0f, 1.0f)){
+                light.setDiffuseColor(diffuse_light);
+            };
+            if(ImGui::SliderFloat("ambient_light", &ambient_light, 0.0f, 1.0f)){
+                light.setAmbientColor(ambient_light);
+            };
+            if(ImGui::SliderFloat("x", &light_px, -1000.0f, 1000.0f)){
+                light.setPosition(light_px, light_py, light_pz);
+            };
+            if(ImGui::SliderFloat("y", &light_py, -1000.0f, 1000.0f)){
+                light.setPosition(light_px, light_py, light_pz);
+            };
+            if(ImGui::SliderFloat("z", &light_pz, -1000.0f, 1000.0f)){
+                light.setPosition(light_px, light_py, light_pz);
+            }
+//-------------------
         }ImGui::End();
         ImGui::Begin("mesh profile");{
             if(ImGui::IsWindowHovered()){
@@ -411,6 +445,24 @@ void ofApp::gui_draw(){
                 }
             }
         }ImGui::End();
+        ImGui::Begin("ESP32_HID");{
+            if (ImGui::Button(" connect_us ")) {
+                if(esp32_hid_us->setup(0xE502, 0xABCD)){
+                    esp32_hid_us->startThread();
+                }
+            }
+            if (ImGui::Button(" dis-con_us ")) {
+                esp32_hid_us->disconnect();
+            }
+            if (ImGui::Button(" connect_scope ")) {
+                if(esp32_hid_camera->setup(0xE502, 0xBBAB)){
+                    esp32_hid_camera->startThread();
+                }
+            }
+            if (ImGui::Button(" disc-con_scope ")) {
+                esp32_hid_camera->disconnect();
+            }
+        }ImGui::End();
     }gui.end();
  
 }
@@ -420,7 +472,7 @@ void ofApp::keyPressed(int key){
     if( key == 8 ){
         viewer.delete_marker();
     }
-    mygizmo.enable_gozmo(gizmocam);
+    mygizmo.enable_gizmo();
 }
 
 //--------------------------------------------------------------

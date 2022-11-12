@@ -22,18 +22,11 @@ public:
     objLoader(string s){
         bool b = model.loadModel(s);
         if(b){
-            std::cout<<"success"<<std::endl;
+            ofLog(OF_LOG_NOTICE) << "success";
             model.setScaleNormalization(false);
             meshCount = model.getMeshCount();
-            //mesh = model.getMesh(3);
-            //setNormals(mesh);
-            //std::cout<<meshCount<<std::endl;
             for(int i = 0; i < meshCount; i++){
                 ofMesh m = model.getMesh(i);
-                for(size_t i = 0; i < m.getNumColors(); i++){
-                    m.getColors()[i];// Use this to get the current color
-                    //m.setColor(i, ofFloatColor(255,0,0));// pass which ever ofFloatColor you want to.
-                }
                 setNormals(m);
                 mesh_.push_back(m);
             }
@@ -43,11 +36,9 @@ public:
             vector<string>strs = split(s,delim);
             thum = strs[strs.size() - 1];
         }else{
-            std::cout<<"fault"<<std::endl;
+            ofLog(OF_LOG_NOTICE) << "fault";
             set = false;
         }
-        
-        
     }
     
     void setNormals(ofMesh &mesh ){

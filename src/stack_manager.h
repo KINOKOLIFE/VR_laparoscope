@@ -154,6 +154,7 @@ public:
     bool use_tecxture;
     ofFbo fbo;
     glm::mat4 mat;
+    glm::mat4 offset;
     glm::vec4 color;
     
     //-------
@@ -165,6 +166,7 @@ public:
         gauge.push_back(object_(width - 20, 20, 40.0/255.0,  6));
         gauge.push_back(object_(width - 20, 60, 40.0/255.0,  6));
         gauge.push_back(object_(width / 2.0,10, 100.0/255.0, 6));
+        offset = glm::mat4(1.0f);
         reset_gauge();
     }
     captureStack(){
@@ -385,8 +387,6 @@ public:
         j["pt"].push_back(pt);
     }
     void crop(ofImage &img, bool make_transparent){
-    }
-    void crop(ofImage &img){
         float crop_width_on_viewer = rectangle_[1].px - rectangle_[0].px;
         float crop_height_on_viewer = rectangle_[3].py - rectangle_[0].py;
         float mm_pixel = 10.0 / abs(gauge[1].py -  gauge[0].py );  // 10mm =  mm_pixel
@@ -398,17 +398,19 @@ public:
         //float mesh_real_space_height = crop_hight * mm_pixel;
         float mesh_real_space_width = crop_width_on_viewer * mm_pixel;
         float mesh_real_space_height = crop_height_on_viewer * mm_pixel;
+        this->mesh = rectMesh(0,0,mesh_real_space_width,mesh_real_space_height,true);
+        setNormals(this->mesh);
+        
         float zero_y = min(gauge[0].py ,  gauge[1].py);
         float mesh_real_space_px = ( rectangle_[0].px - gauge[2].px ) * mm_pixel;
         float mesh_real_space_py = ( rectangle_[0].py - zero_y ) * mm_pixel;
         //cout<< mesh_real_space_width <<" "<<  crop_width_on_viewer * mm_pixel <<endl;
-        this->mat[3][0] = 0;
-        this->mat[3][1] = 0;
-        this->mat[3][2] = 0;
-        glm::vec4 src = this->mat * glm::vec4(mesh_real_space_px, mesh_real_space_py, 0.0, 1.0);
-        this->mat[3][0] = src.x;
-        this->mat[3][1] = src.y;
-        this->mat[3][2] = src.z;;
+        
+        glm::mat4 T(1.0f);
+        T[3][0] = mesh_real_space_px;
+        T[3][1] = mesh_real_space_py;
+        this->offset = T;
+        
         ofFbo f;
         ofDisableArbTex();
         f.allocate(crop_width,crop_hight);
@@ -422,64 +424,27 @@ public:
         ofClear(0,0);
         f.draw(0,0, mesh_real_space_width, mesh_real_space_height);
         fbo.end();
-        //---
-        ofPixels pixels;
-        fbo.readToPixels(pixels);
-        for(int x = 0; x < pixels.getWidth(); x++ ){
-            for(int y = 0; y < pixels.getHeight(); y++ ){
-                ofColor c = pixels.getColor(x,y);
-                if( c.r + c.g + c.b < this->threshold){
-                    ofColor c = ofColor(0,0,0,0);
-                    pixels.setColor(x, y, c);
+        
+        //---transparent
+        if(make_transparent){
+            ofPixels pixels;
+            fbo.readToPixels(pixels);
+            for(int x = 0; x < pixels.getWidth(); x++ ){
+                for(int y = 0; y < pixels.getHeight(); y++ ){
+                    ofColor c = pixels.getColor(x,y);
+                    if( c.r + c.g + c.b < this->threshold){
+                        ofColor c = ofColor(0,0,0,0);
+                        pixels.setColor(x, y, c);
+                    }
                 }
             }
+            ofImage i;
+            i.setFromPixels(pixels);
+            fbo.begin();
+            ofClear(0,0);
+            i.draw(0,0);
+            fbo.end();
         }
-        ofImage i;
-        i.setFromPixels(pixels);
-        fbo.begin();
-        ofClear(0,0);
-        i.draw(0,0);
-        fbo.end();
-        this->mesh = rectMesh(0,0,mesh_real_space_width,mesh_real_space_height,true);
-        setNormals(this->mesh);
-    }
-    void simple_crop(ofImage &img){
-        float crop_width_on_viewer = rectangle_[1].px - rectangle_[0].px;
-        float crop_height_on_viewer = rectangle_[3].py - rectangle_[0].py;
-        float mm_pixel = 10.0 / abs(gauge[1].py -  gauge[0].py );  // 10mm =  mm_pixel
-        float crop_width = crop_width_on_viewer / width *  img.getWidth();
-        float crop_hight = crop_height_on_viewer / height *  img.getHeight();
-        float crop_px = rectangle_[0].px / width *  img.getWidth();
-        float crop_py = rectangle_[0].py / height *  img.getHeight();
-        //float mesh_real_space_width = crop_width * mm_pixel;
-        //float mesh_real_space_height = crop_hight * mm_pixel;
-        float mesh_real_space_width = crop_width_on_viewer * mm_pixel;
-        float mesh_real_space_height = crop_height_on_viewer * mm_pixel;
-        float zero_y = min(gauge[0].py ,  gauge[1].py);
-        float mesh_real_space_px = ( rectangle_[0].px - gauge[2].px ) * mm_pixel;
-        float mesh_real_space_py = ( rectangle_[0].py - zero_y ) * mm_pixel;
-        this->mat[3][0] = 0;
-        this->mat[3][1] = 0;
-        this->mat[3][2] = 0;
-        glm::vec4 src = this->mat * glm::vec4(mesh_real_space_px, mesh_real_space_py, 0.0, 1.0);
-        this->mat[3][0] = src.x;
-        this->mat[3][1] = src.y;
-        this->mat[3][2] = src.z;;
-        ofFbo f;
-        ofDisableArbTex();
-        f.allocate(crop_width,crop_hight);
-        f.begin();
-        ofClear(0,0);
-        img.draw(-crop_px, -crop_py);
-        f.end();
-        ofDisableArbTex();
-        fbo.allocate(mesh_real_space_width, mesh_real_space_height);
-        fbo.begin();
-        ofClear(0,0);
-        f.draw(0,0, mesh_real_space_width, mesh_real_space_height);
-        fbo.end();
-        this->mesh = rectMesh(0,0,mesh_real_space_width,mesh_real_space_height,true);
-        setNormals(this->mesh);
     }
 };
 
@@ -590,9 +555,10 @@ public:
             stacks.push_back( stacks[ stacks.size() - 1 ] );
  
             stacks[ stacks.size() - 2 ].fileName = fileName;
-            //stacks[ stacks.size() - 2 ].mat = mat;
+            //stacks[ stacks.size() - 2 ].mat = m;
+  
             stacks[ stacks.size() - 2 ].threshold = this->threshold;
-            stacks[ stacks.size() - 2 ].crop(image);
+            stacks[ stacks.size() - 2 ].crop(image, true);
             snapCounter ++;
             current_page = stacks.size() - 1;
            
@@ -641,7 +607,7 @@ public:
         change_page();
     }
 
-    void update(ofImage &uvc_image, glm::mat4 mat){
+    void update(ofImage &uvc_image, glm::mat4 m){
         hue = stacks[current_page].hue;
         radius = stacks[current_page].radius;
         if(current_page != stacks.size() -1){
@@ -651,7 +617,7 @@ public:
             fbo.end();
             stacks[current_page].update(fbo);
             if( stacks[current_page].crop_flag ){
-                stacks[current_page].crop(captured);
+                stacks[current_page].crop(captured, true);
             }
         }else{
             fbo.begin();
@@ -659,9 +625,11 @@ public:
             uvc_image.draw(0,0, width, height);
             fbo.end();
             stacks[current_page].update(fbo);
-            stacks[current_page].simple_crop(uvc_image);
+            stacks[current_page].crop(uvc_image, false);
         }
-        //stacks[stacks.size() -1].mat = mat;//^^^^^^必要かも！！
+        if(stacks.size() > 0){
+            stacks[stacks.size() -1].mat = m;//^^^^^^必要かも！！
+        }
         //preview = stacks[stacks.size() -1].fbo;//本当に大丈夫！？？
         preview = stacks[current_page].fbo;
         live_preview = stacks[stacks.size() - 1].fbo;
@@ -692,13 +660,13 @@ public:
     }
     void crop(){
         if(current_page != stacks.size() -1){
-            stacks[current_page].crop(captured);
+            stacks[current_page].crop(captured, true);
         }
     }
     void update_threshold(){
         if(current_page != stacks.size() -1){
             stacks[current_page].threshold = this->threshold;
-            stacks[current_page].crop(captured);
+            stacks[current_page].crop(captured, true);
         }
     }
 };

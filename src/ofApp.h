@@ -11,8 +11,9 @@
 #include <Eigen/Geometry>
 #include <Eigen/LU>
 
+#include "sheared.h"// 循環参照を防ぐため必要
+
 #include "ofxImGui.h"
-#include "sheared.h"
 #include "uvc_capture.h"
 #include "graphics.h"
 #include "realsense.h"
@@ -59,6 +60,14 @@ class ofApp : public ofBaseApp{
     //---3d pespective
     ofFbo perspective;
     ofEasyCam easycam;
+    float specular_light = 1.0, diffuse_light = 1.0, ambient_light = 1.0;
+    float light_px, light_py, light_pz;
+    float shiness_material;
+    float lx,ly,lz;
+    ofLight light;
+    ofMaterial material;
+    //------------
+    ofRectangle area1 = ofRectangle(0,400,424,400);
     ofRectangle area2 = ofRectangle(0,400,424,400);
     //------realsense
     rs265 real_sense;
@@ -67,8 +76,11 @@ class ofApp : public ofBaseApp{
     void button_1_up(bool &b);
     void button_2_up(bool &b);
     void button_3_up(bool &b);
+    void capture_stack(bool &b);
     hid *HID;
-    bool hid_setup;
+    esp32_HID_us *esp32_hid_us;
+    esp32_HID_camera *esp32_hid_camera;
+    HidEventDiscpatcher *hid_event_discatcher;
     //------endoscope
     float fov = 60.0f;
     ofCamera endoscope_camera;
@@ -78,9 +90,8 @@ class ofApp : public ofBaseApp{
     vector<objLoader> objs;
 
     meshHolder mesh_holder;
-    //-------gizmo_camera
-    ofEasyCam gizmocam;
-    gizmo3d mygizmo;
+    //-------gizmo
+    Gizmo mygizmo;
     //------g-bffer
     gbuffer geeBuffer;
     //----picker
